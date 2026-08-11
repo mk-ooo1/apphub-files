@@ -6,4 +6,6 @@
     - [x] Upgrade Gradle to 8.10.2 in `gradle-wrapper.properties`
     - [x] Upgrade AGP to 8.7.0 in `settings.gradle.kts`
     - [x] Upgrade Kotlin to 2.0.21 in `settings.gradle.kts`
+- [x] Fix Gradle Kotlin DSL Compilation Errors
+    - [x] Add imports and fix lambda syntax in `build.gradle.kts`
 - [ ] Verify build

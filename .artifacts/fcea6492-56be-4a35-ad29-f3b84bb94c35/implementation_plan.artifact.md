@@ -1,25 +1,23 @@
-# Implementation Plan - Upgrade Android Build Tools for Flutter Compatibility
+# Implementation Plan - Fix Gradle Kotlin DSL Compilation Errors
 
-This plan upgrades the Android Gradle Plugin (AGP) and Gradle versions to satisfy the minimum requirements enforced by the latest stable Flutter SDK.
+This plan addresses the script compilation errors in `build.gradle.kts` that occurred after the Gradle and AGP upgrade.
 
 ## User Review Required
 
-> [!IMPORTANT]
-> The Flutter build system now enforces a minimum Android Gradle Plugin version of **8.6.0**. I am upgrading your project to **8.7.0** along with a compatible Gradle version (**8.10.2**) to ensure future-proofing and build stability.
+> [!NOTE]
+> The errors `Unresolved reference: util` and `Unresolved reference: it` are common when transitioning to newer versions of Gradle's Kotlin DSL, often due to naming conflicts with the `java` extension and changes in how lambdas are parsed in specific scopes.
 
 ## Proposed Changes
 
 ### Android Build Configuration
 
-#### [MODIFY] [settings.gradle.kts](file:///D:/FlutterProjects/money_manage_app/android/settings.gradle.kts)
-- Upgrade `com.android.application` version from `8.4.0` to `8.7.0`.
-- Upgrade `org.jetbrains.kotlin.android` version from `1.9.10` to `2.0.21` for full compatibility with the new build tools.
-
-#### [MODIFY] [gradle-wrapper.properties](file:///D:/FlutterProjects/money_manage_app/android/gradle/wrapper/gradle-wrapper.properties)
-- Upgrade Gradle from `8.7` to `8.10.2`. AGP 8.7 requires at least Gradle 8.9.
+#### [MODIFY] [build.gradle.kts](file:///D:/FlutterProjects/money_manage_app/android/app/build.gradle.kts)
+- Add explicit import for `java.util.Properties`.
+- Use a named parameter in the `let` block to avoid the `it` resolution issue.
+- Use the fully qualified name for `Properties` if needed, but an import is cleaner.
 
 ## Verification Plan
 
 ### Manual Verification
-- Run `flutter build apk --release` locally or push to GitHub to trigger the Action.
-- The build should now pass the plugin validation check.
+- Run `flutter build apk --release` locally to ensure the script compiles and the build proceeds.
+- Push to GitHub to verify the CI build.
