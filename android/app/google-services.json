@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "403071108275-p6b8cfqj3d6p250v4tfnjqveokdo3tvk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.MKDevOps.moneyManage",
+            "certificate_hash": "a407cc224158a1094c11d424488609082fe4d236"
+          }
+        },
+        {
           "client_id": "403071108275-t0oe7v86hfsr59hdj838dehljmfgda78.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

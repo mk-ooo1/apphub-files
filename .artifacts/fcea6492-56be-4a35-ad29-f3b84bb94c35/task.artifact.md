@@ -1,5 +1,5 @@
-- [x] Downgrade project dependencies to stable versions
-    - [x] Update `pubspec.yaml`
-- [x] Optimize GitHub Actions workflow
-    - [x] Switch to `stable` channel for Flutter
-- [ ] Verify build on GitHub
+- [x] Fix Gradle Compatibility Error
+    - [x] Upgrade Gradle to 8.7 in `gradle-wrapper.properties`
+    - [x] Upgrade AGP to 8.4.0 in `settings.gradle.kts`
+    - [x] Upgrade Kotlin to 1.9.10 in `settings.gradle.kts`
+- [ ] Verify build
