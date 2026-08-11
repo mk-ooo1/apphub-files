@@ -1,0 +1,15 @@
+- `[x]` Core Model & Logic
+    - `[x]` Add `bank` to `ContactMode` enum in `contact.dart`
+    - `[x]` Update `LedgerService` balance calculations
+- `[x]` Localization
+    - `[x]` Add bank/deposit/withdraw keys to ARB files
+- `[x]` UI - Contact/Bank Management
+    - `[x]` Update `AddContactScreen` with Bank toggle
+    - `[x]` Update `AddTransactionScreen` labels for Banks
+    - `[x]` Update `ContactDetailScreen` labels for Banks
+- `[x]` UI - Dashboard Separation
+    - `[x]` Filter "Contacts" tab to hide banks
+    - `[x]` Refactor "Account" tab to show list of Bank accounts
+- `[x]` Verification
+    - `[x]` Verify separate lists for contacts and banks
+    - `[x]` Verify "Deposit/Withdraw" labels appear correctly
