@@ -3,6 +3,8 @@ name: Build & Sign APK
 on:
   push:
     branches: [ main, master ]
+    paths-ignore:
+      - '**/money-manage-latest.apk'
   workflow_dispatch:
 
 jobs:
@@ -69,6 +71,6 @@ jobs:
           if git diff-index --quiet HEAD; then
             echo "No changes to commit"
           else
-            git commit -m "Update Money Manage APK - $(date +'%Y-%m-%d %H:%M')"
+            git commit -m "Update Money Manage APK - $(date +'%Y-%m-%d %H:%M') [skip ci]"
             git push origin main
           fi
