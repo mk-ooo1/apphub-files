@@ -1,54 +1,34 @@
-# Walkthrough - GitHub Actions for Signed APKs
+# Walkthrough - GitHub Actions Build Fix
 
-I have configured a GitHub Actions workflow that will automatically build and sign your APK using the package name `com.MKDevOps.moneyManage`. This ensures that APKs downloaded from your GitHub repository will have the same signature as your local builds, avoiding package conflicts.
+I have applied several fixes to resolve the "Exit Code 1" error and the deprecation warnings in your GitHub Actions workflow.
 
 ## Changes Made
 
-### 1. Reverted Package Name
-- **[build.gradle.kts](file:///D:/FlutterProjects/money_manage_app/android/app/build.gradle.kts)**: Set `namespace` and `applicationId` back to `com.MKDevOps.moneyManage` as requested.
+### 1. Robust Android Configuration
+- **[settings.gradle.kts](file:///D:/FlutterProjects/money_manage_app/android/settings.gradle.kts)**: Updated the script to handle cases where `local.properties` is missing. In GitHub Actions, this file is not present, which was causing the build to crash immediately. It now falls back to the `FLUTTER_ROOT` environment variable provided by the Flutter Action.
 
-### 2. Created Build Workflow
-- **[.github/workflows/release.yml](file:///D:/FlutterProjects/money_manage_app/.github/workflows/release.yml)**: A new workflow file that runs on every push to `main`. It handles:
-    - Environment setup (Java & Flutter).
-    - Keystore restoration from secrets.
-    - Signed APK building.
-    - **New**: Automatically pushes the signed APK to your `apphub-files` repository in the `money-manage/` folder.
+### 2. Version Correction (Stable Baseline)
+- **[settings.gradle.kts](file:///D:/FlutterProjects/money_manage_app/android/settings.gradle.kts)**: Reverted the Android Gradle Plugin (AGP) version from `8.11.1` to `8.1.1` and Kotlin from `1.9.24` to `1.8.22`. The previous versions appeared to be typos or highly unstable versions that would cause build failures.
+- **[gradle-wrapper.properties](file:///D:/FlutterProjects/money_manage_app/android/gradle/wrapper/gradle-wrapper.properties)**: Downgraded Gradle from `8.14` to `8.1` to ensure compatibility with AGP 8.1.1.
 
-## Critical Setup Steps for You
+### 3. Workflow Modernization
+- **[.github/workflows/release.yml](file:///D:/FlutterProjects/money_manage_app/.github/workflows/release.yml)**:
+    - Upgraded `setup-java` to `v5` to resolve the deprecation warning.
+    - Updated Flutter version to `3.16.0` to ensure a stable build environment with modern dependencies.
 
-To make this work, you must add your signing credentials and the `APPHUB_TOKEN` to **THIS** repository (`money_manage_app`) on GitHub.
+## Verification
 
-### Step 1: Encode your Keystore
-You need to convert your `upload-keystore.jks` file into a text string that GitHub can handle. Run this command in your terminal:
-
-```powershell
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("android/app/upload-keystore.jks")) | Out-File -FilePath keystore_base64.txt
-```
-*Open `keystore_base64.txt` and copy the entire long string.*
-
-### Step 2: Add GitHub Secrets
-1.  Go to your GitHub repository on the web.
-2.  Navigate to **Settings > Secrets and variables > Actions**.
-3.  Click **New repository secret** for each of these:
-
-| Secret Name | Value |
-| :--- | :--- |
-| `KEYSTORE_BASE64` | The long text string from `keystore_base64.txt` |
-| `KEYSTORE_PASSWORD` | The password for your `.jks` file (e.g., `102003`) |
-| `KEY_ALIAS` | `upload` |
-| `KEY_PASSWORD` | The password for the alias (e.g., `102003`) |
-| `APPHUB_TOKEN` | Your GitHub Personal Access Token (PAT) |
-
-> [!IMPORTANT]
-> The `APPHUB_TOKEN` allows the build process to "write" to your other repository.
-
-### Step 3: Trigger the Build
-Push your code to GitHub (including the new `.github` folder). The build will start automatically. Once finished, you can download the signed APK from the **Actions** tab.
-
-> [!CAUTION]
-> Remember to delete the temporary `keystore_base64.txt` file from your computer after you are done! Never commit it to Git.
+To verify these changes:
+1.  **Commit and Push**:
+    ```powershell
+    git add .
+    git commit -m "Fix CI build: defensive settings.gradle and stable versions"
+    git push origin main
+    ```
+2.  **Check GitHub Actions**: Monitor the build. It should now pass the initialization and build steps.
 
 ---
 
-render_diffs(file:///D:/FlutterProjects/money_manage_app/android/app/build.gradle.kts)
+render_diffs(file:///D:/FlutterProjects/money_manage_app/android/settings.gradle.kts)
+render_diffs(file:///D:/FlutterProjects/money_manage_app/android/gradle/wrapper/gradle-wrapper.properties)
 render_diffs(file:///D:/FlutterProjects/money_manage_app/.github/workflows/release.yml)

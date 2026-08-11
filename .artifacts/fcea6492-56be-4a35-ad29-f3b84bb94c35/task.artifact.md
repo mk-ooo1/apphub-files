@@ -1,9 +1,3 @@
-- [x] Revert `namespace` in `android/app/build.gradle.kts`
-- [x] Create GitHub Actions workflow file
-    - [x] `.github/workflows/release.yml`
-- [x] Provide final instructions for GitHub Secrets
-    - [x] Encode keystore to Base64
-    - [x] List secrets to add in GitHub UI
-- [x] Add AppHub Publishing to workflow
-    - [x] Update `.github/workflows/release.yml` with push-to-repo logic
-- [ ] Verify publishing
+- [x] Fix GitHub Actions workflow deprecations and versioning
+- [x] Make `settings.gradle.kts` defensive against missing `local.properties`
+- [ ] Verify build on GitHub

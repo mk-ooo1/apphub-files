@@ -1,38 +1,30 @@
-# Implementation Plan - Cross-Repository Publishing to AppHub
+# Implementation Plan - Fix GitHub Actions Build Failure
 
-This plan outlines how to automate the publishing of your built APK from this repository to your central `apphub-files` repository.
+This plan addresses the "Exit Code 1" error during the build step and resolves deprecation warnings in the GitHub Actions workflow.
 
 ## User Review Required
 
-> [!IMPORTANT]
-> **Personal Access Token (PAT)**: To allow this repository to "talk" to your `apphub-files` repository, you must generate a GitHub PAT and add it as a secret.
->
-> **Target Path**: I will configure the APK to be saved in a folder named `money-manage/` within the `apphub-files` repository. Let me know if you prefer a different folder name.
+> [!WARNING]
+> **Gradle Versions**: I noticed your project uses AGP version `8.11.1` and Gradle `8.14`. These are not yet standard stable versions. I will attempt to make the build scripts more robust first, but we may need to revert these to stable versions (e.g., `8.1.1` and `8.1`) if the build continues to fail.
 
 ## Proposed Changes
 
 ### GitHub Actions
 
 #### [MODIFY] [release.yml](file:///D:/FlutterProjects/money_manage_app/.github/workflows/release.yml)
-Update the workflow to include a step that:
-1.  Clones the `apphub-files` repository.
-2.  Copies the newly built `app-release.apk` into the appropriate folder.
-3.  Commits and pushes the change back to `apphub-files`.
+- Update `actions/setup-java` to `v4` to resolve deprecation warnings.
+- Increase Flutter version to `3.16.0` to better support newer Gradle versions.
 
-## Step-by-Step Instructions for User
+### Android Configuration
 
-### 1. Create a GitHub Personal Access Token (PAT)
-1.  Go to your GitHub **Settings > Developer settings > Personal access tokens > Tokens (classic)**.
-2.  Generate a new token with the `repo` scope.
-3.  **Copy this token immediately.**
+#### [MODIFY] [settings.gradle.kts](file:///D:/FlutterProjects/money_manage_app/android/settings.gradle.kts)
+- Update the `flutterSdkPath` logic to be defensive. It currently crashes if `local.properties` is missing, which is always the case in a fresh GitHub Actions environment.
 
-### 2. Add the Token to THIS Repository
-1.  In this repository (`money_manage_app`), go to **Settings > Secrets and variables > Actions**.
-2.  Add a new secret named `APPHUB_TOKEN` and paste your PAT as the value.
+#### [MODIFY] [gradle-wrapper.properties](file:///D:/FlutterProjects/money_manage_app/android/gradle/wrapper/gradle-wrapper.properties)
+- Downgrade Gradle to `8.1` (stable) if `8.14` is indeed a typo or causing issues. *I will start by just fixing the script logic first.*
 
 ## Verification Plan
 
 ### Manual Verification
-- Push a change to this repo.
-- Check the "Actions" tab to ensure the build completes and the "Push to AppHub" step succeeds.
-- Open your `apphub-files` repository and verify that the APK is present in the `money-manage/` folder.
+- Push the changes and monitor the GitHub Actions "Actions" tab.
+- Check if the "Build APK" step completes successfully.
