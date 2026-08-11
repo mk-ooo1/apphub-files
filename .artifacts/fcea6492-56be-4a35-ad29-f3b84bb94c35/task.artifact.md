@@ -1,4 +1,5 @@
-- [x] Fix GitHub Actions workflow loop
-    - [x] Add `paths-ignore` to `release.yml`
-    - [x] Add `[skip ci]` to automatic commit message
-- [ ] Verify fix by observing workflow runs
+- [x] Create security policy documentation
+    - [x] `SECURITY.md`
+- [x] Configure automated dependency updates
+    - [x] `.github/dependabot.yml`
+- [ ] Verify setup instructions

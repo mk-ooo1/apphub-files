@@ -1,26 +1,28 @@
-# Walkthrough - Preventing GitHub Actions Loop
+# Walkthrough - Security Infrastructure Setup
 
-I have updated the workflow to prevent it from triggering itself in an infinite loop. This was happening because the build process commits the new APK back to the repository, which GitHub then sees as a new "push" event.
+I have added a security policy and automated dependency monitoring to your project. This ensures your app remains secure and that you are notified of any vulnerabilities in the libraries you use.
 
 ## Changes Made
 
-### 1. Added Trigger Path Filtering
-- **[.github/workflows/release.yml](file:///D:/FlutterProjects/money_manage_app/.github/workflows/release.yml)**: Added `paths-ignore` for the APK file. Now, even if the APK is updated, GitHub will not start a new build if *only* that file changed.
+### 1. Security Policy
+- **[SECURITY.md](file:///D:/FlutterProjects/money_manage_app/SECURITY.md)**: Created a public policy that directs users to report security issues privately to you instead of posting them publicly. This is a best practice for professional software development.
 
-### 2. Added `[skip ci]` to Automatic Commits
-- **[.github/workflows/release.yml](file:///D:/FlutterProjects/money_manage_app/.github/workflows/release.yml)**: Updated the "Push to AppHub" step to include `[skip ci]` in the commit message. GitHub Actions automatically recognizes this tag and ignores the commit for triggering workflows.
+### 2. Automated Dependency Updates
+- **[.github/dependabot.yml](file:///D:/FlutterProjects/money_manage_app/.github/dependabot.yml)**: Configured GitHub Dependabot to scan your `pubspec.yaml` and GitHub Actions every week.
+    - It will automatically check for security patches and new versions.
+    - It is configured to "group" updates together, so you don't get too many separate notifications.
 
-## Verification
+## How to Verify
 
-To verify the fix:
-1.  **Push the latest changes**:
+1.  **Push the changes**:
     ```powershell
     git add .
-    git commit -m "Fix GitHub Actions infinite loop"
+    git commit -m "Add security policy and dependabot configuration"
     git push origin main
     ```
-2.  **Observe the run**: The workflow will start once. After it pushes the APK, check if a second run starts. It should remain idle.
+2.  **Check the Security Tab**: Go to your repository on GitHub and click the **Security** tab. You should now see your policy active.
+3.  **Check Dependabot**: Go to **Insights > Dependency graph > Dependabot**. You should see that it has started monitoring your files.
 
 ---
-
-render_diffs(file:///D:/FlutterProjects/money_manage_app/.github/workflows/release.yml)
+render_diffs(file:///D:/FlutterProjects/money_manage_app/SECURITY.md)
+render_diffs(file:///D:/FlutterProjects/money_manage_app/.github/dependabot.yml)
