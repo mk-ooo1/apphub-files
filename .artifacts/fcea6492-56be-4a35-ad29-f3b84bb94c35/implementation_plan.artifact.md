@@ -1,25 +1,24 @@
-# Implementation Plan - Upgrade AGP to Meet Dependency Requirements
+# Implementation Plan - Fix AppHub Permission Error
 
-This plan upgrades the Android Gradle Plugin (AGP) and Gradle versions to satisfy the requirements of modern dependencies like `androidx.core:core:1.17.0`, which requires AGP 8.9.1 or higher.
+This plan addresses the `403 Forbidden` error encountered when pushing the APK to the `apphub-files` repository. It involves refining the authentication logic in the workflow and verifying token scopes.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> Some of your project's dependencies (likely from newer Flutter plugins) are requiring a very recent version of the Android Gradle Plugin. I will upgrade your project to **AGP 8.11.1** and **Gradle 8.14** (restoring the versions originally found in your project) to ensure all dependency requirements are met.
+> **Verify Token Permissions**: Please ensure your `APPHUB_TOKEN` has the correct permissions:
+> 1. If using a **Classic Token**: Ensure the **`repo`** checkbox is checked.
+> 2. If using a **Fine-grained Token**: Ensure it has **"Contents: Read and Write"** access for the `apphub-files` repository.
 
 ## Proposed Changes
 
-### Android Build Configuration
+### GitHub Actions
 
-#### [MODIFY] [settings.gradle.kts](file:///D:/FlutterProjects/money_manage_app/android/settings.gradle.kts)
-- Upgrade `com.android.application` version from `8.7.0` to `8.11.1`.
-- Ensure Kotlin version is at least `2.0.21` (already set).
-
-#### [MODIFY] [gradle-wrapper.properties](file:///D:/FlutterProjects/money_manage_app/android/gradle/wrapper/gradle-wrapper.properties)
-- Upgrade Gradle from `8.10.2` to `8.14`.
+#### [MODIFY] [release.yml](file:///D:/FlutterProjects/money_manage_app/.github/workflows/release.yml)
+- Update the "Push to AppHub" step to explicitly set the authenticated remote URL right before pushing. This ensures Git uses the PAT instead of any default environment credentials.
+- Use a more robust authentication format for the Git remote.
 
 ## Verification Plan
 
 ### Manual Verification
-- Run `flutter build apk --release` or push to GitHub.
-- The `checkReleaseAarMetadata` task should now pass as the AGP version (8.11.1) satisfies the minimum requirement (8.9.1).
+- Push the change and monitor the "Push to AppHub" step in GitHub Actions.
+- If it still fails with 403, it confirms the token itself lacks write permission for that specific repository.
