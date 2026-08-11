@@ -1,3 +1,5 @@
-- [x] Fix GitHub Actions workflow deprecations and versioning
-- [x] Make `settings.gradle.kts` defensive against missing `local.properties`
+- [x] Downgrade project dependencies to stable versions
+    - [x] Update `pubspec.yaml`
+- [x] Optimize GitHub Actions workflow
+    - [x] Switch to `stable` channel for Flutter
 - [ ] Verify build on GitHub
