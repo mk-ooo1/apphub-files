@@ -1,17 +1,16 @@
-# Walkthrough - Gradle Version Upgrade for Flutter Compatibility
+# Walkthrough - Android Build Tools Upgrade
 
-I have upgraded the Gradle and Android Gradle Plugin versions to resolve the `Unresolved reference: filePermissions` compilation error in `FlutterPlugin.kt`.
+I have upgraded the Android build tools to satisfy the minimum requirements of your Flutter SDK and resolve the build validation error.
 
 ## Changes Made
 
 ### 1. Gradle Wrapper Upgrade
-- **[gradle-wrapper.properties](file:///D:/FlutterProjects/money_manage_app/android/gradle/wrapper/gradle-wrapper.properties)**: Upgraded Gradle from `8.1` to `8.7`. This version is required by modern Flutter tools (3.24+) to correctly compile internal Kotlin scripts.
+- **[gradle-wrapper.properties](file:///D:/FlutterProjects/money_manage_app/android/gradle/wrapper/gradle-wrapper.properties)**: Upgraded Gradle from `8.7` to `8.10.2`. This version provides the necessary features for the latest Android Gradle Plugin.
 
 ### 2. Android Gradle Plugin & Kotlin Upgrade
 - **[settings.gradle.kts](file:///D:/FlutterProjects/money_manage_app/android/settings.gradle.kts)**:
-    - Upgraded `com.android.application` from `8.1.1` to `8.4.0`.
-    - Upgraded `org.jetbrains.kotlin.android` from `1.8.22` to `1.9.10`.
-    - These versions are verified to work well together and support the features required by the latest Flutter framework.
+    - Upgraded `com.android.application` (AGP) from `8.4.0` to `8.7.0`. This satisfies the minimum requirement of `8.6.0` reported in your build error.
+    - Upgraded `org.jetbrains.kotlin.android` from `1.9.10` to `2.0.21`. Kotlin 2.0 is required for optimal compatibility with the latest Gradle and Android build tools.
 
 ## Verification
 
@@ -20,7 +19,7 @@ To verify the fix and build your APK:
 1.  **Commit and Push**:
     ```powershell
     git add .
-    git commit -m "Upgrade Gradle to 8.7 and AGP to 8.4.0 to fix build errors"
+    git commit -m "Upgrade AGP to 8.7.0 and Gradle to 8.10.2 to satisfy Flutter requirements"
     git push origin main
     ```
 2.  **Trigger Local Build**:
@@ -30,7 +29,7 @@ To verify the fix and build your APK:
     flutter build apk --release
     ```
 
-The `FlutterPlugin.kt` compilation error should now be resolved.
+The "Android Gradle Plugin version lower than Flutter's minimum" error should now be resolved.
 
 ---
 

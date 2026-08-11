@@ -2,4 +2,8 @@
     - [x] Upgrade Gradle to 8.7 in `gradle-wrapper.properties`
     - [x] Upgrade AGP to 8.4.0 in `settings.gradle.kts`
     - [x] Upgrade Kotlin to 1.9.10 in `settings.gradle.kts`
+- [x] Upgrade Android Build Tools for Flutter 3.24+ Compatibility
+    - [x] Upgrade Gradle to 8.10.2 in `gradle-wrapper.properties`
+    - [x] Upgrade AGP to 8.7.0 in `settings.gradle.kts`
+    - [x] Upgrade Kotlin to 2.0.21 in `settings.gradle.kts`
 - [ ] Verify build
