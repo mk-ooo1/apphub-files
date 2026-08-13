@@ -1,38 +1,21 @@
-# Implementation Plan - Fix Exact Alarm Permission Error
+# Implementation Plan - Upgrade Kotlin to Meet Flutter Requirements
 
-This plan resolves the `PlatformException(exact_alarms_not_permitted, ...)` error on Android 14+ by correctly checking and requesting the `SCHEDULE_EXACT_ALARM` permission and providing a fallback to inexact alarms if permission is denied.
+This plan upgrades the Kotlin version in your Android configuration to satisfy the minimum requirements enforced by your current Flutter environment.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> On Android 14+, apps must have explicit user permission to schedule exact alarms. I will update the app to:
-> 1.  Check for the permission automatically when a reminder is set.
-> 2.  Request the permission (which opens system settings) if it's missing.
-> 3.  Fallback to "inexact" alarms if the user refuses, so the reminder still works (though it might be a few minutes late).
+> The Flutter build system is reporting that your project's Kotlin version (**2.0.21**) is lower than the minimum required version of **2.2.20**. I will upgrade your project to use Kotlin **2.2.20** and keep the Android Gradle Plugin at **8.11.1** to ensure all dependency and framework requirements are met.
 
 ## Proposed Changes
 
-### Notification Service
+### Android Build Configuration
 
-#### [MODIFY] [notification_service.dart](file:///D:/FlutterProjects/money_manage_app/lib/services/notification_service.dart)
-- Update `scheduleTransactionReminder` to:
-    - Check `canScheduleExactAlarms()`.
-    - If `false`, attempt to request the permission via `Permission.scheduleExactAlarm.request()`.
-    - Determine the `AndroidScheduleMode` based on the final permission status:
-        - `exactAllowWhileIdle` if permitted.
-        - `inexactAllowWhileIdle` if not permitted.
-- This ensures the app never crashes with `exact_alarms_not_permitted` and always schedules *some* form of reminder.
-
-### UI Improvements (Optional but Recommended)
-
-#### [MODIFY] [add_transaction_screen.dart](file:///D:/FlutterProjects/money_manage_app/lib/screens/add_transaction_screen.dart)
-- Improve the error handling in the `_save` method to provide a more helpful message if the reminder setup encounters issues.
+#### [MODIFY] [settings.gradle.kts](file:///D:/FlutterProjects/money_manage_app/android/settings.gradle.kts)
+- Upgrade `org.jetbrains.kotlin.android` version from `2.0.21` to `2.2.20`.
 
 ## Verification Plan
 
 ### Manual Verification
-- Test on an Android 14+ device.
-- Try setting a reminder.
-- Observe if the app requests the "Alarms & Reminders" permission.
-- If permission is granted, verify the reminder is exact.
-- If permission is denied, verify the reminder is still scheduled (using inexact mode) and no crash occurs.
+- Push the changes to GitHub and monitor the "Build APK" step.
+- The build should now pass the Kotlin version validation check.

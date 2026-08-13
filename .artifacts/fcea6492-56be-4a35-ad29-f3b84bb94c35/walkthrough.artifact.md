@@ -1,26 +1,24 @@
-# Walkthrough - Exact Alarm Permission Fix
+# Walkthrough - Kotlin Version Upgrade
 
-I have fixed the `exact_alarms_not_permitted` error that occurred when setting reminders on Android 14+. The app now gracefully handles the strict "Alarms & Reminders" permission requirement.
+I have upgraded the Kotlin version in your project to meet the minimum requirement of **2.2.20** enforced by your current Flutter environment.
 
 ## Changes Made
 
-### 1. Permission Handling in Notification Service
-- **[notification_service.dart](file:///D:/FlutterProjects/money_manage_app/lib/services/notification_service.dart)**:
-    - Added a check for the `SCHEDULE_EXACT_ALARM` permission before scheduling any reminder.
-    - If the permission is missing, the app will now automatically attempt to request it from the user.
-    - **Fallback Mechanism**: If the user does not grant the permission, the app now uses `AndroidScheduleMode.inexactAllowWhileIdle`. This ensures the reminder is still set (though it might be off by a few minutes) instead of crashing with a `PlatformException`.
-
-### 2. Improved User Feedback
-- **[add_transaction_screen.dart](file:///D:/FlutterProjects/money_manage_app/lib/screens/add_transaction_screen.dart)**:
-    - Updated the error snackbar to be more helpful. If scheduling fails due to permission issues, it now explicitly asks the user to check their system settings.
+### 1. Kotlin Version Upgrade
+- **[settings.gradle.kts](file:///D:/FlutterProjects/money_manage_app/android/settings.gradle.kts)**: Updated the `org.jetbrains.kotlin.android` plugin version from `2.0.21` to **`2.2.20`**. This ensures that the Flutter Gradle plugin can correctly compile your project without throwing version validation errors.
 
 ## Verification
 
-- [x] Setting a reminder on Android 14+ no longer throws an exception.
-- [x] The app requests the "Alarms & Reminders" permission when needed.
-- [x] Reminders are successfully scheduled even if the permission is denied (using inexact fallback).
+To verify the fix and build your APK:
+
+1.  **Commit and Push**:
+    ```powershell
+    git add .
+    git commit -m "Upgrade Kotlin to 2.2.20 to meet Flutter requirements"
+    git push origin main
+    ```
+2.  **Monitor GitHub Actions**: The build should now pass the Kotlin version check and proceed with the compilation.
 
 ---
 
-render_diffs(file:///D:/FlutterProjects/money_manage_app/lib/services/notification_service.dart)
-render_diffs(file:///D:/FlutterProjects/money_manage_app/lib/screens/add_transaction_screen.dart)
+render_diffs(file:///D:/FlutterProjects/money_manage_app/android/settings.gradle.kts)
