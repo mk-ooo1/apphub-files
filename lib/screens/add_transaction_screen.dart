@@ -110,8 +110,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         } catch (e) {
           debugPrint('Failed to schedule reminder: $e');
           if (mounted) {
+            String msg = 'Saved. Reminder setup failed.';
+            if (e.toString().contains('exact_alarms_not_permitted')) {
+              msg = 'Saved. Please enable "Alarms & Reminders" in settings for exact timing.';
+            }
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Saved, but reminder failed: ${e.toString()}')),
+              SnackBar(
+                content: Text(msg),
+                action: SnackBarAction(
+                  label: 'OK',
+                  onPressed: () {},
+                ),
+              ),
             );
           }
         }

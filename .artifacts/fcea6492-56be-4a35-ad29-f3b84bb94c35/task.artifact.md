@@ -1,5 +1,5 @@
-- [x] Create security policy documentation
-    - [x] `SECURITY.md`
-- [x] Configure automated dependency updates
-    - [x] `.github/dependabot.yml`
-- [ ] Verify setup instructions
+- [x] Update `NotificationService` for Android 14 exact alarm permission
+    - [x] Add logic to request permission if missing
+    - [x] Implement fallback to `inexactAllowWhileIdle`
+- [x] Improve error handling in `AddTransactionScreen`
+- [ ] Verify fix on Android 14+ devices

@@ -70,6 +70,23 @@ class NotificationService {
   }) async {
     await init();
     
+    // Check and request exact alarm permission for Android 14+
+    bool useExact = true;
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final status = await Permission.scheduleExactAlarm.status;
+      if (status.isDenied || status.isPermanentlyDenied) {
+        // Attempt to request, but don't block if it fails or requires manual settings
+        final result = await Permission.scheduleExactAlarm.request();
+        useExact = result.isGranted;
+      } else {
+        useExact = status.isGranted;
+      }
+    }
+
+    final scheduleMode = useExact 
+        ? AndroidScheduleMode.exactAllowWhileIdle 
+        : AndroidScheduleMode.inexactAllowWhileIdle;
+
     // SAFE ID: hashCode can be negative, which crashes Android notifications.
     // .abs() ensures it's always positive.
     final int id = (txnId.hashCode).abs();
@@ -111,7 +128,7 @@ class NotificationService {
       body,
       tz.TZDateTime.from(scheduledDate, tz.local),
       _details(),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: scheduleMode,
       uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: matchComponents,
       payload: txnId,
@@ -136,7 +153,7 @@ class NotificationService {
           'In 30 minutes: $body',
           tz.TZDateTime.from(advanceTime, tz.local),
           _details(),
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          androidScheduleMode: scheduleMode,
           uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         );
       }

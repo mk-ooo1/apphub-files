@@ -7,6 +7,10 @@ on:
       - '**/money-manage-latest.apk'
   workflow_dispatch:
 
+permissions:
+  contents: write
+  actions: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
