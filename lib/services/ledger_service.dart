@@ -57,6 +57,27 @@ class LedgerService {
 
   Future<void> deleteTransaction(String id) => _txns.doc(id).delete();
 
+  Future<void> deleteAllUserData() async {
+    final batch = _db.batch();
+
+    // 1. Delete all contacts
+    final contactDocs = await _contacts.get();
+    for (final doc in contactDocs.docs) {
+      batch.delete(doc.reference);
+    }
+
+    // 2. Delete all transactions
+    final txnDocs = await _txns.get();
+    for (final doc in txnDocs.docs) {
+      batch.delete(doc.reference);
+    }
+
+    // 3. Delete user root document
+    batch.delete(_db.collection('users').doc(_uid));
+
+    await batch.commit();
+  }
+
   Stream<List<LedgerTransaction>> watchTransactionsForContact(String contactId) {
     return _txns.where('contactId', isEqualTo: contactId).snapshots().map((snap) {
       final list = snap.docs.map((d) => LedgerTransaction.fromMap(d.id, d.data())).toList();

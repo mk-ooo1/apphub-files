@@ -40,6 +40,61 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _deleteAccount(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.deleteAccount, style: const TextStyle(color: Colors.red)),
+        content: Text(l10n.deleteAccountWarning),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        // 1. Delete Firestore data first
+        await LedgerService().deleteAllUserData();
+
+        // 2. Delete the Auth account
+        await FirebaseAuth.instance.currentUser?.delete();
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.accountDeleted)),
+          );
+          Navigator.pop(context); // Back to Auth screen (handled by StreamBuilder in main.dart)
+        }
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'requires-recent-login') {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.recentLoginRequired)),
+            );
+          }
+        } else {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error: ${e.message}')),
+            );
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e')),
+          );
+        }
+      }
+    }
+  }
+
   void _showLanguagePicker(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
@@ -214,6 +269,12 @@ class SettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text('Logout', style: TextStyle(color: Colors.red)),
             onTap: () => _logout(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.no_accounts_outlined, color: Colors.red),
+            title: Text(l10n.deleteAccount, style: const TextStyle(color: Colors.red)),
+            subtitle: const Text('Permanently remove all your data', style: TextStyle(fontSize: 12)),
+            onTap: () => _deleteAccount(context),
           ),
 
           const _SectionHeader(title: 'Support & Feedback'),

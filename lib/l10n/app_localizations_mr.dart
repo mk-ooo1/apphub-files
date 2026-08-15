@@ -253,6 +253,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get allTransactions => 'सर्व व्यवहार';
 
   @override
+  String get all => 'सर्व';
+
+  @override
   String get updateBaseBalance => 'मुख्य शिल्लक अपडेट करा';
 
   @override
@@ -295,4 +298,18 @@ class AppLocalizationsMr extends AppLocalizations {
   @override
   String get clearPinWarning =>
       'तुम्हाला खात्री आहे की तुम्हाला अ‍ॅप पिन सुरक्षा हटवायची आहे?';
+
+  @override
+  String get deleteAccount => 'खाते हटवा';
+
+  @override
+  String get deleteAccountWarning =>
+      'यामुळे तुमचे खाते आणि संपर्क आणि व्यवहारांसह तुमचा सर्व डेटा कायमचा हटवला जाईल. ही क्रिया पूर्ववत केली जाऊ शकत नाही.';
+
+  @override
+  String get recentLoginRequired =>
+      'सुरक्षेसाठी, कृपया तुमचे खाते हटवण्यापूर्वी लॉग आउट करा आणि पुन्हा लॉग इन करा.';
+
+  @override
+  String get accountDeleted => 'खाते आणि डेटा यशस्वीरित्या हटविला गेला.';
 }

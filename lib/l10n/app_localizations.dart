@@ -580,6 +580,12 @@ abstract class AppLocalizations {
   /// **'All Transactions'**
   String get allTransactions;
 
+  /// No description provided for @all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get all;
+
   /// No description provided for @updateBaseBalance.
   ///
   /// In en, this message translates to:
@@ -657,6 +663,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Are you sure you want to remove the App PIN security?'**
   String get clearPinWarning;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently delete your account and all your data including contacts and transactions. This action cannot be undone.'**
+  String get deleteAccountWarning;
+
+  /// No description provided for @recentLoginRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'For security, please logout and log back in before deleting your account.'**
+  String get recentLoginRequired;
+
+  /// No description provided for @accountDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Account and data deleted successfully.'**
+  String get accountDeleted;
 }
 
 class _AppLocalizationsDelegate

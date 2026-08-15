@@ -314,6 +314,7 @@ class _AccountTab extends StatefulWidget {
 
 class _AccountTabState extends State<_AccountTab> {
   String _search = '';
+  TxnDirection? _directionFilter;
 
   @override
   Widget build(BuildContext context) {
@@ -354,6 +355,10 @@ class _AccountTabState extends State<_AccountTab> {
                 final matchesNote = (t.note ?? '').toLowerCase().contains(query);
                 return matchesName || matchesNote;
               }).toList();
+            }
+
+            if (_directionFilter != null) {
+              allTxns = allTxns.where((t) => t.direction == _directionFilter).toList();
             }
 
             return Column(
@@ -408,21 +413,37 @@ class _AccountTabState extends State<_AccountTab> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: l10n.searchTxn,
-                      prefixIcon: const Icon(Icons.search, size: 20),
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                      filled: true,
-                      fillColor: Colors.grey.shade100,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
+                  padding: const EdgeInsets.fromLTRB(16, 0, 8, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: l10n.searchTxn,
+                            prefixIcon: const Icon(Icons.search, size: 20),
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                            filled: true,
+                            fillColor: Colors.grey.shade100,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          onChanged: (v) => setState(() => _search = v),
+                        ),
                       ),
-                    ),
-                    onChanged: (v) => setState(() => _search = v),
+                      PopupMenuButton<TxnDirection?>(
+                        icon: Icon(Icons.filter_list, 
+                          color: _directionFilter == null ? Colors.grey : AppColors.primary),
+                        onSelected: (v) => setState(() => _directionFilter = v),
+                        itemBuilder: (context) => [
+                          PopupMenuItem(value: null, child: Text(l10n.all)),
+                          PopupMenuItem(value: TxnDirection.gave, child: Text(l10n.gave)),
+                          PopupMenuItem(value: TxnDirection.got, child: Text(l10n.got)),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
                 Expanded(

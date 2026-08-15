@@ -1,16 +1,5 @@
-- [x] Fix Gradle Compatibility Error
-    - [x] Upgrade Gradle to 8.7 in `gradle-wrapper.properties`
-    - [x] Upgrade AGP to 8.4.0 in `settings.gradle.kts`
-    - [x] Upgrade Kotlin to 1.9.10 in `settings.gradle.kts`
-- [x] Upgrade Android Build Tools for Flutter 3.24+ Compatibility
-    - [x] Upgrade Gradle to 8.10.2 in `gradle-wrapper.properties`
-    - [x] Upgrade AGP to 8.7.0 in `settings.gradle.kts`
-    - [x] Upgrade Kotlin to 2.0.21 in `settings.gradle.kts`
-- [x] Fix Gradle Kotlin DSL Compilation Errors
-    - [x] Add imports and fix lambda syntax in `build.gradle.kts`
-- [x] Upgrade AGP to Meet Dependency Requirements (8.9.1+)
-    - [x] Upgrade Gradle to 8.14 in `gradle-wrapper.properties`
-    - [x] Upgrade AGP to 8.11.1 in `settings.gradle.kts`
-- [x] Upgrade Kotlin to 2.2.20
-    - [x] Update `settings.gradle.kts`
-- [ ] Verify build
+- [x] Add "All" key to localization files
+- [x] Regenerate localizations
+- [x] Add direction filtering to Dashboard's Account tab
+- [x] Add direction filtering to Contact Detail's transaction lists
+- [ ] Verify functionality

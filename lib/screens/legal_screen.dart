@@ -47,7 +47,8 @@ Your data is stored securely in Firebase (Google Cloud). We use industry-standar
 We use Google Sign-In and Firebase for authentication and data storage. These services have their own privacy policies.
 
 6. Your Rights
-You can delete your data by deleting transactions or contacts within the app. If you wish to delete your entire account, please contact us.
+- Data Access: You can view all your transactions and contacts within the app.
+- Data Deletion: You can delete individual transactions or contacts. You can also delete your entire account and all associated data via the "Delete Account" option in Settings. This process is permanent and wipes all records from our servers.
 
 7. Changes to This Policy
 We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy in the app.

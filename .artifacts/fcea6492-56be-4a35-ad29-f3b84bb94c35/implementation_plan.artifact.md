@@ -1,21 +1,33 @@
-# Implementation Plan - Upgrade Kotlin to Meet Flutter Requirements
+# Implementation Plan - Transaction Direction Filtering
 
-This plan upgrades the Kotlin version in your Android configuration to satisfy the minimum requirements enforced by your current Flutter environment.
-
-## User Review Required
-
-> [!IMPORTANT]
-> The Flutter build system is reporting that your project's Kotlin version (**2.0.21**) is lower than the minimum required version of **2.2.20**. I will upgrade your project to use Kotlin **2.2.20** and keep the Android Gradle Plugin at **8.11.1** to ensure all dependency and framework requirements are met.
+This plan adds filtering by "Gave" and "Got" directions to the transaction lists in the Dashboard and Contact Detail screens.
 
 ## Proposed Changes
 
-### Android Build Configuration
+### Dashboard Screen
 
-#### [MODIFY] [settings.gradle.kts](file:///D:/FlutterProjects/money_manage_app/android/settings.gradle.kts)
-- Upgrade `org.jetbrains.kotlin.android` version from `2.0.21` to `2.2.20`.
+#### [MODIFY] [dashboard_screen.dart](file:///D:/FlutterProjects/money_manage_app/lib/screens/dashboard_screen.dart)
+- Update `_AccountTabState` to include `TxnDirection? _directionFilter`.
+- In the `build` method of `_AccountTabState`, add a `Row` containing the search `TextField` and a new `PopupMenuButton` for filtering by direction.
+- Update the filtering logic in the `StreamBuilder` to filter by `_directionFilter`.
+
+### Contact Detail Screen
+
+#### [MODIFY] [contact_detail_screen.dart](file:///D:/FlutterProjects/money_manage_app/lib/screens/contact_detail_screen.dart)
+- Update `_TransactionListViewState` to include `TxnDirection? _directionFilter`.
+- Add a `PopupMenuButton` next to the search `TextField`.
+- Update the filtering logic to include `_directionFilter`.
+
+### Localization
+
+#### [MODIFY] [app_en.arb](file:///D:/FlutterProjects/money_manage_app/lib/l10n/app_en.arb)
+#### [MODIFY] [app_hi.arb](file:///D:/FlutterProjects/money_manage_app/lib/l10n/app_hi.arb)
+#### [MODIFY] [app_mr.arb](file:///D:/FlutterProjects/money_manage_app/lib/l10n/app_mr.arb)
+- Add generic filter strings: `filterAll`, `filterGave`, `filterGot` (or reuse existing if appropriate). Given the context, reusing `allTransactions`, `gave`, and `got` might be sufficient, but dedicated "Filter" labels are cleaner.
 
 ## Verification Plan
 
 ### Manual Verification
-- Push the changes to GitHub and monitor the "Build APK" step.
-- The build should now pass the Kotlin version validation check.
+- Open the Dashboard's **Account** tab. Use the filter to show only "Gave" or "Got" transactions. Combine with search to verify both work together.
+- Open a **Contact Detail** screen. Test the filter in the Principal/Interest tabs and the Bank list.
+- Verify that switching tabs or closing the screen resets or maintains state as expected.

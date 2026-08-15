@@ -252,6 +252,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get allTransactions => 'All Transactions';
 
   @override
+  String get all => 'All';
+
+  @override
   String get updateBaseBalance => 'Update Base Balance';
 
   @override
@@ -293,4 +296,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get clearPinWarning =>
       'Are you sure you want to remove the App PIN security?';
+
+  @override
+  String get deleteAccount => 'Delete Account';
+
+  @override
+  String get deleteAccountWarning =>
+      'This will permanently delete your account and all your data including contacts and transactions. This action cannot be undone.';
+
+  @override
+  String get recentLoginRequired =>
+      'For security, please logout and log back in before deleting your account.';
+
+  @override
+  String get accountDeleted => 'Account and data deleted successfully.';
 }

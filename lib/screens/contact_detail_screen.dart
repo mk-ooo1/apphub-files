@@ -321,10 +321,12 @@ class _TransactionListView extends StatefulWidget {
 
 class _TransactionListViewState extends State<_TransactionListView> {
   String _search = '';
+  TxnDirection? _directionFilter;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isBank = widget.contact.mode == ContactMode.bank;
 
     var displayTxns = widget.txns;
     if (_search.isNotEmpty) {
@@ -334,6 +336,10 @@ class _TransactionListViewState extends State<_TransactionListView> {
         final matchesAmount = t.amount.toString().contains(query);
         return matchesNote || matchesAmount;
       }).toList();
+    }
+
+    if (_directionFilter != null) {
+      displayTxns = displayTxns.where((t) => t.direction == _directionFilter).toList();
     }
 
     return Column(
@@ -359,21 +365,43 @@ class _TransactionListViewState extends State<_TransactionListView> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: TextField(
-            decoration: InputDecoration(
-              hintText: l10n.searchTxn,
-              prefixIcon: const Icon(Icons.search, size: 20),
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(vertical: 8),
-              filled: true,
-              fillColor: Colors.grey.shade100,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide.none,
+          padding: const EdgeInsets.fromLTRB(16, 0, 8, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: l10n.searchTxn,
+                    prefixIcon: const Icon(Icons.search, size: 20),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  onChanged: (v) => setState(() => _search = v),
+                ),
               ),
-            ),
-            onChanged: (v) => setState(() => _search = v),
+              PopupMenuButton<TxnDirection?>(
+                icon: Icon(Icons.filter_list, 
+                  color: _directionFilter == null ? Colors.grey : AppColors.primary),
+                onSelected: (v) => setState(() => _directionFilter = v),
+                itemBuilder: (context) => [
+                  PopupMenuItem(value: null, child: Text(l10n.all)),
+                  PopupMenuItem(
+                    value: TxnDirection.gave, 
+                    child: Text(isBank ? l10n.withdraw : l10n.gave)
+                  ),
+                  PopupMenuItem(
+                    value: TxnDirection.got, 
+                    child: Text(isBank ? l10n.deposit : l10n.got)
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
         Expanded(

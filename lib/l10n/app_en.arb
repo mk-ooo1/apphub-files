@@ -87,6 +87,7 @@
   "bankBalance": "Bank Balance",
   "liveBankBalance": "Live Bank Balance",
   "allTransactions": "All Transactions",
+  "all": "All",
   "updateBaseBalance": "Update Base Balance",
   "initialBankAmount": "Initial Bank Amount",
   "enterAmount": "Enter amount",
@@ -106,5 +107,9 @@
   "deleteTransaction": "Delete transaction?",
   "deleteTransactionWarning": "Are you sure you want to delete this transaction? This cannot be undone.",
   "clearPin": "Clear App PIN?",
-  "clearPinWarning": "Are you sure you want to remove the App PIN security?"
+  "clearPinWarning": "Are you sure you want to remove the App PIN security?",
+  "deleteAccount": "Delete Account",
+  "deleteAccountWarning": "This will permanently delete your account and all your data including contacts and transactions. This action cannot be undone.",
+  "recentLoginRequired": "For security, please logout and log back in before deleting your account.",
+  "accountDeleted": "Account and data deleted successfully."
 }
