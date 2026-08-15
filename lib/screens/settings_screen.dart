@@ -8,6 +8,7 @@ import 'package:money_manage_app/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import '../services/locale_provider.dart';
 import '../services/user_prefs_provider.dart';
+import '../services/ledger_service.dart';
 import '../utils/theme.dart';
 import 'legal_screen.dart';
 import 'pin_lock_screen.dart';
