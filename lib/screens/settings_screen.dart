@@ -280,6 +280,15 @@ class SettingsScreen extends StatelessWidget {
 
           const _SectionHeader(title: 'Support & Feedback'),
           ListTile(
+            leading: const Icon(Icons.stars, color: Colors.amber),
+            title: const Text('Support Development'),
+            subtitle: const Text('Check out special offers to support the app'),
+            onTap: () => launchUrl(
+              Uri.parse('https://omg10.com/4/11783062'),
+              mode: LaunchMode.externalApplication,
+            ),
+          ),
+          ListTile(
             leading: const Icon(Icons.share_outlined),
             title: const Text('Invite Friends'),
             subtitle: const Text('Share Money Manage with others'),

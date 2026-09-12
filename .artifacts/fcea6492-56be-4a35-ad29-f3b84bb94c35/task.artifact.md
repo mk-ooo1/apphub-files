@@ -1,5 +1,6 @@
-- [x] Add "All" key to localization files
-- [x] Regenerate localizations
-- [x] Add direction filtering to Dashboard's Account tab
-- [x] Add direction filtering to Contact Detail's transaction lists
-- [ ] Verify functionality
+- [x] Integrate Monetag link in `DashboardScreen`
+    - [x] Import `url_launcher`
+    - [x] Add "Support Us" card in `_ContactsTab`
+- [x] Integrate Monetag link in `SettingsScreen`
+    - [x] Add "Support Development" ListTile in `SettingsScreen`
+- [x] Verify links open correctly

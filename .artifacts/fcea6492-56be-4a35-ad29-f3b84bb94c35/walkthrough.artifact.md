@@ -1,36 +1,30 @@
-# Walkthrough - Transaction Direction Filtering
+# Walkthrough - Monetag Direct Link Integration
 
-I have added filtering by "Gave" and "Got" directions to the transaction lists in both the Dashboard and the Contact Detail screens.
+I have integrated your Monetag direct link into the app's Dashboard and Settings screens to help increase clicks and support development.
 
 ## Changes Made
 
-### 1. Dashboard - Account Tab
-- Added a filter button (list icon) next to the search bar.
-- Users can now filter the "All Transactions" list by:
-    - **All**: Shows everything.
-    - **Gave**: Shows only outgoing transactions.
-    - **Got**: Shows only incoming transactions.
-- The filter works in combination with the existing search bar.
+### 1. Dashboard Integration
+- **[dashboard_screen.dart](file:///D:/FlutterProjects/money_manage_app/lib/screens/dashboard_screen.dart)**:
+    - Added an attractive "Support Project Development" card in the Contacts tab.
+    - Placed it right below the main summary card for maximum visibility.
+    - Styled it with an amber theme to make it stand out as a "special" feature.
 
-### 2. Contact Detail Screen
-- Added the same filter functionality to the **Principal**, **Interest**, and **Bank Transactions** lists.
-- For **Bank** accounts, the filter labels automatically adjust to **Withdraw** and **Deposit** for better clarity.
-- For **Personal/Business** contacts, the labels remain **Gave** and **Got**.
+### 2. Settings Integration
+- **[settings_screen.dart](file:///D:/FlutterProjects/money_manage_app/lib/screens/settings_screen.dart)**:
+    - Added a new "Support Development" item at the top of the "Support & Feedback" section.
+    - This provides a secondary, permanent location for users to find the link.
 
-### 3. Localization
-- Added an `all` key to English, Hindi, and Marathi localization files to provide a translated "All" option in the filter menu.
+### 3. URL Launching
+- Used `url_launcher` with `LaunchMode.externalApplication` to ensure the link opens in the user's default browser instead of an internal webview, which is often required by ad platforms like Monetag.
 
 ## Verification
 
-- [x] Verified that the filter correctly isolates "Gave" and "Got" transactions in the Dashboard.
-- [x] Verified that the labels in the Contact Detail screen correctly change based on whether the contact is a bank.
-- [x] Confirmed that searching and filtering can be used together seamlessly.
-- [x] Confirmed that localization for the "All" option works in all supported languages.
+- [x] Verified the "Support" card appears in the Dashboard.
+- [x] Verified the "Support Development" item appears in Settings.
+- [x] Confirmed that clicking both items correctly opens `https://omg10.com/4/11783062` in an external browser.
 
 ---
 
 render_diffs(file:///D:/FlutterProjects/money_manage_app/lib/screens/dashboard_screen.dart)
-render_diffs(file:///D:/FlutterProjects/money_manage_app/lib/screens/contact_detail_screen.dart)
-render_diffs(file:///D:/FlutterProjects/money_manage_app/lib/l10n/app_en.arb)
-render_diffs(file:///D:/FlutterProjects/money_manage_app/lib/l10n/app_hi.arb)
-render_diffs(file:///D:/FlutterProjects/money_manage_app/lib/l10n/app_mr.arb)
+render_diffs(file:///D:/FlutterProjects/money_manage_app/lib/screens/settings_screen.dart)

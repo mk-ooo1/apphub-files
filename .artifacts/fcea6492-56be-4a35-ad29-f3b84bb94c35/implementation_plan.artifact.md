@@ -1,33 +1,28 @@
-# Implementation Plan - Transaction Direction Filtering
+# Implementation Plan - Monetag Direct Link Integration
 
-This plan adds filtering by "Gave" and "Got" directions to the transaction lists in the Dashboard and Contact Detail screens.
+This plan integrates your Monetag direct link into the app to increase clicks and support development. We will place it strategically in the Dashboard and Settings screens.
+
+## User Review Required
+
+> [!IMPORTANT]
+> **Ad Link Strategy**: I will implement this as a "Support Development" or "Exclusive Offers" feature to encourage clicks in a professional way.
 
 ## Proposed Changes
 
 ### Dashboard Screen
 
 #### [MODIFY] [dashboard_screen.dart](file:///D:/FlutterProjects/money_manage_app/lib/screens/dashboard_screen.dart)
-- Update `_AccountTabState` to include `TxnDirection? _directionFilter`.
-- In the `build` method of `_AccountTabState`, add a `Row` containing the search `TextField` and a new `PopupMenuButton` for filtering by direction.
-- Update the filtering logic in the `StreamBuilder` to filter by `_directionFilter`.
+- Add a small, attractive "Support Us" banner or card in the `_ContactsTab` between the summary card and the search bar.
+- Clicking this card will open `https://omg10.com/4/11783062` using `url_launcher`.
 
-### Contact Detail Screen
+### Settings Screen
 
-#### [MODIFY] [contact_detail_screen.dart](file:///D:/FlutterProjects/money_manage_app/lib/screens/contact_detail_screen.dart)
-- Update `_TransactionListViewState` to include `TxnDirection? _directionFilter`.
-- Add a `PopupMenuButton` next to the search `TextField`.
-- Update the filtering logic to include `_directionFilter`.
-
-### Localization
-
-#### [MODIFY] [app_en.arb](file:///D:/FlutterProjects/money_manage_app/lib/l10n/app_en.arb)
-#### [MODIFY] [app_hi.arb](file:///D:/FlutterProjects/money_manage_app/lib/l10n/app_hi.arb)
-#### [MODIFY] [app_mr.arb](file:///D:/FlutterProjects/money_manage_app/lib/l10n/app_mr.arb)
-- Add generic filter strings: `filterAll`, `filterGave`, `filterGot` (or reuse existing if appropriate). Given the context, reusing `allTransactions`, `gave`, and `got` might be sufficient, but dedicated "Filter" labels are cleaner.
+#### [MODIFY] [settings_screen.dart](file:///D:/FlutterProjects/money_manage_app/lib/screens/settings_screen.dart)
+- Add a new item in the "Support & Feedback" section labeled "Support Project Development" or "Check Out Special Offers".
+- This item will also open the Monetag link.
 
 ## Verification Plan
 
 ### Manual Verification
-- Open the Dashboard's **Account** tab. Use the filter to show only "Gave" or "Got" transactions. Combine with search to verify both work together.
-- Open a **Contact Detail** screen. Test the filter in the Principal/Interest tabs and the Bank list.
-- Verify that switching tabs or closing the screen resets or maintains state as expected.
+- Open the Dashboard. Tap the new support card and verify the Monetag link opens in the browser.
+- Open Settings. Tap the new support link and verify it also opens the correct URL.
