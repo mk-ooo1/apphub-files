@@ -57,11 +57,16 @@ jobs:
         env:
           APPHUB_TOKEN: ${{ secrets.APPHUB_TOKEN }}
         run: |
+          if [ -z "$APPHUB_TOKEN" ]; then
+            echo "Error: APPHUB_TOKEN is not set. Please add it to your repository secrets."
+            exit 1
+          fi
+
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
           
-          # Clone the target repository
-          git clone https://x-access-token:${APPHUB_TOKEN}@github.com/${{ github.repository_owner }}/apphub-files.git apphub
+          # Clone the target repository using the token in the URL for better auth reliability
+          git clone https://${{ github.repository_owner }}:${APPHUB_TOKEN}@github.com/${{ github.repository_owner }}/apphub-files.git apphub
           
           # Create directory if it doesn't exist
           mkdir -p apphub/money-manage
@@ -76,5 +81,7 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Update Money Manage APK - $(date +'%Y-%m-%d %H:%M') [skip ci]"
+            # Set the push URL explicitly to ensure token use
+            git remote set-url origin https://${{ github.repository_owner }}:${APPHUB_TOKEN}@github.com/${{ github.repository_owner }}/apphub-files.git
             git push origin main
           fi

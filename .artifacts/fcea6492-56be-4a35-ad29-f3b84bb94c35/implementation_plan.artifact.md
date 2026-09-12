@@ -1,28 +1,25 @@
-# Implementation Plan - Monetag Direct Link Integration
+# Implementation Plan - Fix AppHub Authentication
 
-This plan integrates your Monetag direct link into the app to increase clicks and support development. We will place it strategically in the Dashboard and Settings screens.
+This plan resolves the `Authentication failed` error (Exit code 128) when pushing the APK to the `apphub-files` repository by switching to a more robust authentication method in the GitHub Actions workflow.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> **Ad Link Strategy**: I will implement this as a "Support Development" or "Exclusive Offers" feature to encourage clicks in a professional way.
+> **Secret Verification**: Please ensure you have added the secret exactly as named: `APPHUB_TOKEN` in the **money_manage_app** repository (not the apphub-files repository).
+>
+> **Token Scope**: Double-check that your Personal Access Token (PAT) has the **`repo`** (Full control of private repositories) scope enabled.
 
 ## Proposed Changes
 
-### Dashboard Screen
+### GitHub Actions
 
-#### [MODIFY] [dashboard_screen.dart](file:///D:/FlutterProjects/money_manage_app/lib/screens/dashboard_screen.dart)
-- Add a small, attractive "Support Us" banner or card in the `_ContactsTab` between the summary card and the search bar.
-- Clicking this card will open `https://omg10.com/4/11783062` using `url_launcher`.
-
-### Settings Screen
-
-#### [MODIFY] [settings_screen.dart](file:///D:/FlutterProjects/money_manage_app/lib/screens/settings_screen.dart)
-- Add a new item in the "Support & Feedback" section labeled "Support Project Development" or "Check Out Special Offers".
-- This item will also open the Monetag link.
+#### [MODIFY] [release.yml](file:///D:/FlutterProjects/money_manage_app/.github/workflows/release.yml)
+- Add a check to verify if the `APPHUB_TOKEN` is present before attempting the push.
+- Update the "Push to AppHub" step to use a more direct authentication format in the remote URL.
+- Use the repository owner name explicitly in the authentication string.
 
 ## Verification Plan
 
 ### Manual Verification
-- Open the Dashboard. Tap the new support card and verify the Monetag link opens in the browser.
-- Open Settings. Tap the new support link and verify it also opens the correct URL.
+- Push the workflow change and monitor the "Push to AppHub" step.
+- If it still fails, the error message will be clearer about whether the token is missing or rejected.
