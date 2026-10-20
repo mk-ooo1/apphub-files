@@ -45,7 +45,7 @@ class AdminService {
       if (!snap.exists || snap.data() == null) {
         // Return default config if doc doesn't exist yet
         return AdminConfig(
-          updateMessage: 'Update the app to the latest version.',
+          updateMessage: 'New version available! Update now for best experience.',
           updateUrl: 'https://github.com/mk-ooo1/apphub-files/raw/main/money-manage/money-manage-latest.apk',
           adminPassword: 'admin123',
         );
@@ -55,15 +55,25 @@ class AdminService {
   }
 
   Future<AdminConfig> getConfig() async {
-    final snap = await _configDoc.get();
-    if (!snap.exists || snap.data() == null) {
+    try {
+      final snap = await _configDoc.get();
+      if (!snap.exists || snap.data() == null) {
+        return AdminConfig(
+          updateMessage: 'New version available! Update now for best experience.',
+          updateUrl: 'https://github.com/mk-ooo1/apphub-files/raw/main/money-manage/money-manage-latest.apk',
+          adminPassword: 'admin123',
+        );
+      }
+      return AdminConfig.fromMap(snap.data()!);
+    } catch (e) {
+      debugPrint('Error getting admin config: $e');
+      // Fallback in case of permission or network errors
       return AdminConfig(
-        updateMessage: 'Update the app to the latest version.',
+        updateMessage: 'New version available! Update now for best experience.',
         updateUrl: 'https://github.com/mk-ooo1/apphub-files/raw/main/money-manage/money-manage-latest.apk',
         adminPassword: 'admin123',
       );
     }
-    return AdminConfig.fromMap(snap.data()!);
   }
 
   Future<void> updateConfig(AdminConfig config) async {

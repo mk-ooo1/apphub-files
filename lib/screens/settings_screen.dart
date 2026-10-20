@@ -28,48 +28,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _handleDevTap() async {
     _devTapCount++;
-    if (_devTapCount >= 7) {
-      _devTapCount = 0; // Reset
-      
-      // Fetch the actual admin config
-      final config = await AdminService().getConfig();
-
-      if (!mounted) return;
-
-      // Show password prompt
-      final pwdCtrl = TextEditingController();
-      final success = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Admin Access'),
-          content: TextField(
-            controller: pwdCtrl,
-            obscureText: true,
-            decoration: const InputDecoration(hintText: 'Enter Admin Password'),
+    
+    if (_devTapCount < 7) {
+      if (_devTapCount >= 3) {
+        final remaining = 7 - _devTapCount;
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('You are $remaining steps away from admin access.'),
+            duration: const Duration(milliseconds: 500),
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-            TextButton(
-              onPressed: () {
-                if (pwdCtrl.text == config.adminPassword) {
-                  Navigator.pop(ctx, true);
-                } else {
-                  ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Incorrect password')));
-                  Navigator.pop(ctx, false);
-                }
-              },
-              child: const Text('Enter'),
-            ),
-          ],
-        ),
-      );
-
-      if (success == true && mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => AdminPanelScreen(currentConfig: config)),
         );
       }
+      return;
+    }
+
+    // Reach 7 taps
+    _devTapCount = 0; // Reset
+    ScaffoldMessenger.of(context).clearSnackBars();
+    
+    // Fetch the actual admin config
+    final config = await AdminService().getConfig();
+
+    if (!mounted) return;
+
+    // Show password prompt
+    final pwdCtrl = TextEditingController();
+    final success = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Admin Access'),
+        content: TextField(
+          controller: pwdCtrl,
+          obscureText: true,
+          decoration: const InputDecoration(hintText: 'Enter Admin Password'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              if (pwdCtrl.text == config.adminPassword) {
+                Navigator.pop(ctx, true);
+              } else {
+                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Incorrect password')));
+                Navigator.pop(ctx, false);
+              }
+            },
+            child: const Text('Enter'),
+          ),
+        ],
+      ),
+    );
+
+    if (success == true && mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => AdminPanelScreen(currentConfig: config)),
+      );
     }
   }
 

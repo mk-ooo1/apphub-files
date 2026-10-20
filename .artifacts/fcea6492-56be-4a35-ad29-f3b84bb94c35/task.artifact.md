@@ -1,2 +1,4 @@
-- [x] Move `_handleDevTap` to correct class scope
-- [ ] Verify compilation
+- [ ] Fix `AdminService` to handle missing Firebase documents safely
+- [ ] Add tap feedback to `SettingsScreen`'s `_handleDevTap`
+- [ ] Ensure "Update App" button renders correctly
+- [ ] Commit and push to GitHub
