@@ -5,12 +5,14 @@ class UserProfile {
   final String email;
   final String name;
   final DateTime? premiumUntil;
+  final String? pendingRequestPlan;
 
   UserProfile({
     required this.uid,
     required this.email,
     required this.name,
     this.premiumUntil,
+    this.pendingRequestPlan,
   });
 
   bool get isPremiumActive => premiumUntil != null && premiumUntil!.isAfter(DateTime.now());
@@ -21,6 +23,7 @@ class UserProfile {
       'email': email,
       'name': name,
       'premiumUntil': premiumUntil != null ? Timestamp.fromDate(premiumUntil!) : null,
+      'pendingRequestPlan': pendingRequestPlan,
     };
   }
 
@@ -37,6 +40,7 @@ class UserProfile {
       email: map['email'] ?? '',
       name: map['name'] ?? 'User',
       premiumUntil: exp,
+      pendingRequestPlan: map['pendingRequestPlan'],
     );
   }
 }

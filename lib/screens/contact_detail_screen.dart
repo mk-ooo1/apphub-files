@@ -10,6 +10,8 @@ import '../utils/theme.dart';
 import 'add_transaction_screen.dart';
 import 'add_contact_screen.dart';
 
+import '../models/user_profile.dart';
+
 final _currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
 final _dateFmt = DateFormat('d MMM yyyy, h:mm a');
 
@@ -253,41 +255,61 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   }
 
   Widget _buildFAB(AppLocalizations l10n) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        FloatingActionButton.extended(
-          heroTag: 'gave',
-          backgroundColor: AppColors.gave,
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AddTransactionScreen(
-                contact: widget.contact,
-                direction: TxnDirection.gave,
+    return StreamBuilder<UserProfile?>(
+      stream: _service.watchCurrentUserProfile(),
+      builder: (context, snapshot) {
+        final isPremium = snapshot.data?.isPremiumActive == true;
+
+        if (!isPremium) {
+          return FloatingActionButton.extended(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Upgrade to Premium in Settings to add data.')),
+              );
+            },
+            icon: const Icon(Icons.lock),
+            label: const Text('Locked'),
+            backgroundColor: Colors.grey,
+          );
+        }
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            FloatingActionButton.extended(
+              heroTag: 'gave',
+              backgroundColor: AppColors.gave,
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AddTransactionScreen(
+                    contact: widget.contact,
+                    direction: TxnDirection.gave,
+                  ),
+                ),
               ),
+              label: Text(widget.contact.mode == ContactMode.bank ? l10n.withdraw : l10n.gave),
+              icon: Icon(widget.contact.mode == ContactMode.bank ? Icons.remove : Icons.arrow_upward),
             ),
-          ),
-          label: Text(widget.contact.mode == ContactMode.bank ? l10n.withdraw : l10n.gave),
-          icon: Icon(widget.contact.mode == ContactMode.bank ? Icons.remove : Icons.arrow_upward),
-        ),
-        const SizedBox(width: 12),
-        FloatingActionButton.extended(
-          heroTag: 'got',
-          backgroundColor: AppColors.got,
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AddTransactionScreen(
-                contact: widget.contact,
-                direction: TxnDirection.got,
+            const SizedBox(width: 12),
+            FloatingActionButton.extended(
+              heroTag: 'got',
+              backgroundColor: AppColors.got,
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AddTransactionScreen(
+                    contact: widget.contact,
+                    direction: TxnDirection.got,
+                  ),
+                ),
               ),
+              label: Text(widget.contact.mode == ContactMode.bank ? l10n.deposit : l10n.got),
+              icon: Icon(widget.contact.mode == ContactMode.bank ? Icons.add : Icons.arrow_downward),
             ),
-          ),
-          label: Text(widget.contact.mode == ContactMode.bank ? l10n.deposit : l10n.got),
-          icon: Icon(widget.contact.mode == ContactMode.bank ? Icons.add : Icons.arrow_downward),
-        ),
-      ],
+          ],
+        );
+      }
     );
   }
 }

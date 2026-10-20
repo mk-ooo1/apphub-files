@@ -54,6 +54,12 @@ class LedgerService {
     });
   }
 
+  Future<void> requestActivation(String planName) async {
+    await _db.collection('users').doc(_uid).update({
+      'pendingRequestPlan': planName,
+    });
+  }
+
   Future<void> grantPremiumDays(String uid, int days) async {
     final docRef = _db.collection('users').doc(uid);
     final doc = await docRef.get();
@@ -76,6 +82,7 @@ class LedgerService {
     await docRef.update({
       'premiumUntil': Timestamp.fromDate(newExp),
       'isPremium': FieldValue.delete(), // Clean up old field if exists
+      'pendingRequestPlan': FieldValue.delete(), // Clear request on approval
     });
   }
 
@@ -83,6 +90,7 @@ class LedgerService {
     await _db.collection('users').doc(uid).update({
       'premiumUntil': null,
       'isPremium': FieldValue.delete(),
+      'pendingRequestPlan': FieldValue.delete(),
     });
   }
 

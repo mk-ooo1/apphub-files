@@ -149,35 +149,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         floatingActionButton: Builder(builder: (context) {
           final tabController = DefaultTabController.of(context);
-          return ListenableBuilder(
-            listenable: tabController,
-            builder: (context, _) {
-              final isAccountTab = tabController.index == 1;
+          
+          return StreamBuilder<UserProfile?>(
+            stream: _service.watchCurrentUserProfile(),
+            builder: (context, snapshot) {
+              final isPremium = snapshot.data?.isPremiumActive == true;
 
-              if (isAccountTab) {
-                return FloatingActionButton.extended(
-                  heroTag: 'add_bank',
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AddContactScreen(forcedMode: ContactMode.bank)),
-                  ),
-                  icon: const Icon(Icons.account_balance),
-                  label: Text(l10n.addBank),
-                  backgroundColor: AppColors.primary,
-                );
-              }
+              return ListenableBuilder(
+                listenable: tabController,
+                builder: (context, _) {
+                  final isAccountTab = tabController.index == 1;
 
-              return FloatingActionButton(
-                heroTag: 'add_menu',
-                backgroundColor: AppColors.primary,
-                child: const Icon(Icons.add),
-                onPressed: () {
-                  showModalBottomSheet(
-                    context: context,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                    ),
-                    builder: (ctx) => SafeArea(
+                  if (!isPremium) {
+                    return FloatingActionButton.extended(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Upgrade to Premium in Settings to add data.')),
+                        );
+                      },
+                      icon: const Icon(Icons.lock),
+                      label: const Text('Locked'),
+                      backgroundColor: Colors.grey,
+                    );
+                  }
+
+                  if (isAccountTab) {
+                    return FloatingActionButton.extended(
+                      heroTag: 'add_bank',
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AddContactScreen(forcedMode: ContactMode.bank)),
+                      ),
+                      icon: const Icon(Icons.account_balance),
+                      label: Text(l10n.addBank),
+                      backgroundColor: AppColors.primary,
+                    );
+                  }
+
+                  return FloatingActionButton(
+                    heroTag: 'add_menu',
+                    backgroundColor: AppColors.primary,
+                    child: const Icon(Icons.add),
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                        ),
+                        builder: (ctx) => SafeArea(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -222,7 +241,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   );
                 },
               );
-            },
+            }
           );
         }),
       ),

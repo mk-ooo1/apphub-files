@@ -89,6 +89,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
+              // 1. Mark request in Firestore
+              try {
+                await LedgerService().requestActivation(plan.name);
+              } catch (e) {
+                debugPrint('Failed to log request: $e');
+              }
+
+              // 2. Open WhatsApp
               final waUri = Uri.parse('https://wa.me/${config.adminWhatsApp}?text=Hello Admin, I have paid ₹${plan.price} for the ${plan.name} plan. My email is ${user.email}. Please activate my premium account.');
               if (await canLaunchUrl(waUri)) {
                 await launchUrl(waUri, mode: LaunchMode.externalApplication);

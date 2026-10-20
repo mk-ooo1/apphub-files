@@ -1,4 +1,8 @@
-- [ ] Fix `isPremium` reference
-- [x] Fix null safety for `user` variable
-- [x] Ensure `_showPaymentDialog` is in the correct scope
-- [x] Verify compilation
+- [x] Update `UserProfile` with `pendingRequestPlan`
+- [x] Fix `LedgerService.watchAllUserProfiles()` filter
+- [x] Add `requestActivation` to `LedgerService`
+- [x] Connect "I Have Paid" to `requestActivation` in `SettingsScreen`
+- [x] Highlight pending requests in `AdminPanelScreen`
+- [x] Lock `DashboardScreen` FABs behind premium status
+- [x] Lock `ContactDetailScreen` FABs behind premium status
+- [ ] Commit and push to GitHub

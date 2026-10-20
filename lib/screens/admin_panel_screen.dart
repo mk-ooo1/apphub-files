@@ -268,17 +268,32 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
           itemBuilder: (context, index) {
             final user = users[index];
             final isActive = user.isPremiumActive;
+            final isPending = user.pendingRequestPlan != null;
             
             return ListTile(
               leading: CircleAvatar(
                 backgroundColor: isActive ? Colors.amber.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.2),
                 child: Icon(isActive ? Icons.star : Icons.person, color: isActive ? Colors.amber : Colors.grey),
               ),
-              title: Text(user.name),
+              title: Row(
+                children: [
+                  Text(user.name),
+                  if (isPending) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(color: Colors.red.shade100, borderRadius: BorderRadius.circular(4)),
+                      child: const Text('Requested', style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ],
+              ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(user.email, style: const TextStyle(fontSize: 12)),
+                  if (isPending) 
+                    Text('Plan: ${user.pendingRequestPlan}', style: const TextStyle(fontSize: 11, color: Colors.deepOrange, fontWeight: FontWeight.bold)),
                   if (user.premiumUntil != null)
                     Text(
                       isActive ? 'Active till: ${dateFmt.format(user.premiumUntil!)}' : 'Expired on: ${dateFmt.format(user.premiumUntil!)}',
@@ -286,7 +301,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                     ),
                 ],
               ),
-              isThreeLine: user.premiumUntil != null,
+              isThreeLine: user.premiumUntil != null || isPending,
               trailing: PopupMenuButton<int>(
                 icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
                 tooltip: 'Grant Premium Days',
@@ -305,7 +320,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                   const PopupMenuItem(value: 90, child: Text('+ 90 Days')),
                   const PopupMenuItem(value: 365, child: Text('+ 365 Days')),
                   const PopupMenuDivider(),
-                  const PopupMenuItem(value: -1, child: Text('Revoke Premium', style: TextStyle(color: Colors.red))),
+                  const PopupMenuItem(value: -1, child: Text('Revoke / Reject', style: TextStyle(color: Colors.red))),
                 ],
               ),
             );
