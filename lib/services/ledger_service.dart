@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 import '../models/contact.dart';
 import '../models/ledger_transaction.dart';
+import '../models/user_profile.dart';
 
 /// Central data access layer. All data is scoped under the signed-in user's
 /// uid so multiple people can use the same Firebase project safely.
@@ -17,6 +18,73 @@ class LedgerService {
 
   CollectionReference<Map<String, dynamic>> get _txns =>
       _db.collection('users').doc(_uid).collection('transactions');
+
+  // ---------- User Profiles (Premium) ----------
+
+  Future<void> createUserProfile(User user) async {
+    final docRef = _db.collection('users').doc(user.uid);
+    final doc = await docRef.get();
+    if (!doc.exists || !doc.data()!.containsKey('premiumUntil')) {
+      await docRef.set({
+        'email': user.email ?? '',
+        'name': user.displayName ?? 'User',
+      }, SetOptions(merge: true));
+    } else {
+      // Just update name/email
+      await docRef.update({
+        'email': user.email ?? '',
+        'name': user.displayName ?? 'User',
+      });
+    }
+  }
+
+  Stream<UserProfile?> watchCurrentUserProfile() {
+    return _db.collection('users').doc(_uid).snapshots().map((snap) {
+      if (!snap.exists || snap.data() == null) return null;
+      return UserProfile.fromMap(snap.id, snap.data()!);
+    });
+  }
+
+  Stream<List<UserProfile>> watchAllUserProfiles() {
+    return _db.collection('users').snapshots().map((snap) {
+      return snap.docs
+          .where((d) => d.data().containsKey('email')) // Safe filter
+          .map((d) => UserProfile.fromMap(d.id, d.data()))
+          .toList();
+    });
+  }
+
+  Future<void> grantPremiumDays(String uid, int days) async {
+    final docRef = _db.collection('users').doc(uid);
+    final doc = await docRef.get();
+    
+    DateTime currentExp = DateTime.now();
+    if (doc.exists && doc.data() != null) {
+      final data = doc.data()!;
+      if (data['premiumUntil'] != null) {
+        final existingExp = (data['premiumUntil'] as Timestamp).toDate();
+        if (existingExp.isAfter(currentExp)) {
+          currentExp = existingExp;
+        }
+      } else if (data['isPremium'] == true) {
+        // Legacy fallback
+        currentExp = DateTime.now().add(const Duration(days: 365));
+      }
+    }
+    
+    final newExp = currentExp.add(Duration(days: days));
+    await docRef.update({
+      'premiumUntil': Timestamp.fromDate(newExp),
+      'isPremium': FieldValue.delete(), // Clean up old field if exists
+    });
+  }
+
+  Future<void> revokePremium(String uid) async {
+    await _db.collection('users').doc(uid).update({
+      'premiumUntil': null,
+      'isPremium': FieldValue.delete(),
+    });
+  }
 
   // ---------- Contacts ----------
 

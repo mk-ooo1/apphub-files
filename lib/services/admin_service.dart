@@ -1,22 +1,37 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import '../models/subscription_plan.dart';
 
 class AdminConfig {
   final String updateMessage;
   final String updateUrl;
   final String adminPassword;
+  final String upiId;
+  final String adminWhatsApp;
+  final List<SubscriptionPlan> plans;
 
   AdminConfig({
     required this.updateMessage,
     required this.updateUrl,
     required this.adminPassword,
+    required this.upiId,
+    required this.adminWhatsApp,
+    required this.plans,
   });
 
   factory AdminConfig.fromMap(Map<String, dynamic> map) {
     return AdminConfig(
       updateMessage: map['updateMessage'] ?? 'New version available! Update now for best experience.',
       updateUrl: map['updateUrl'] ?? 'https://github.com/mk-ooo1/apphub-files/raw/main/money-manage/money-manage-latest.apk',
-      adminPassword: map['adminPassword'] ?? 'admin123', // Default fallback password
+      adminPassword: map['adminPassword'] ?? 'admin123',
+      upiId: map['upiId'] ?? 'your_upi_id@ybl',
+      adminWhatsApp: map['adminWhatsApp'] ?? '919876543210',
+      plans: map['plans'] != null 
+          ? (map['plans'] as List).map((p) => SubscriptionPlan.fromMap(p)).toList()
+          : [
+              SubscriptionPlan(name: 'Monthly', days: 30, price: 99),
+              SubscriptionPlan(name: 'Yearly', days: 365, price: 999),
+            ],
     );
   }
 
@@ -25,6 +40,9 @@ class AdminConfig {
       'updateMessage': updateMessage,
       'updateUrl': updateUrl,
       'adminPassword': adminPassword,
+      'upiId': upiId,
+      'adminWhatsApp': adminWhatsApp,
+      'plans': plans.map((p) => p.toMap()).toList(),
     };
   }
 }
@@ -48,6 +66,12 @@ class AdminService {
           updateMessage: 'New version available! Update now for best experience.',
           updateUrl: 'https://github.com/mk-ooo1/apphub-files/raw/main/money-manage/money-manage-latest.apk',
           adminPassword: 'admin123',
+          upiId: 'your_upi_id@ybl',
+          adminWhatsApp: '919876543210',
+          plans: [
+            SubscriptionPlan(name: 'Monthly', days: 30, price: 99),
+            SubscriptionPlan(name: 'Yearly', days: 365, price: 999),
+          ],
         );
       }
       return AdminConfig.fromMap(snap.data()!);
@@ -62,6 +86,12 @@ class AdminService {
           updateMessage: 'New version available! Update now for best experience.',
           updateUrl: 'https://github.com/mk-ooo1/apphub-files/raw/main/money-manage/money-manage-latest.apk',
           adminPassword: 'admin123',
+          upiId: 'your_upi_id@ybl',
+          adminWhatsApp: '919876543210',
+          plans: [
+            SubscriptionPlan(name: 'Monthly', days: 30, price: 99),
+            SubscriptionPlan(name: 'Yearly', days: 365, price: 999),
+          ],
         );
       }
       return AdminConfig.fromMap(snap.data()!);
@@ -72,6 +102,12 @@ class AdminService {
         updateMessage: 'New version available! Update now for best experience.',
         updateUrl: 'https://github.com/mk-ooo1/apphub-files/raw/main/money-manage/money-manage-latest.apk',
         adminPassword: 'admin123',
+        upiId: 'your_upi_id@ybl',
+        adminWhatsApp: '919876543210',
+        plans: [
+          SubscriptionPlan(name: 'Monthly', days: 30, price: 99),
+          SubscriptionPlan(name: 'Yearly', days: 365, price: 999),
+        ],
       );
     }
   }

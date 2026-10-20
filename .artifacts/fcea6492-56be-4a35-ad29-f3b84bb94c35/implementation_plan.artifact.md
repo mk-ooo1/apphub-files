@@ -1,25 +1,40 @@
-# Implementation Plan - Fix Admin Panel Access & Update Button
+# Implementation Plan - WhatsApp-Based Activation Requests
 
-I apologize for misunderstanding your previous request. I see now that the 7-tap Admin Panel and the Update Button we added previously are not functioning correctly, and you want to fix those features.
-
-## The Problem
-The `_handleDevTap` method is defined in `settings_screen.dart`, but because of a previous copy-paste error during file resolution, the tap counter `_devTapCount` might not be working correctly (e.g., losing state if the widget rebuilds unexpectedly) or the `AdminService` is failing to initialize/fetch data, causing the password dialog to never appear. Additionally, the Update Button might not be displaying if the `AdminService.watchConfig()` stream is throwing an error or hanging.
+This plan simplifies the "Activation Request" flow by redirecting the user directly to the Admin's WhatsApp with a pre-filled message after payment, eliminating the need for complex in-app request states.
 
 ## Proposed Changes
 
-### [MODIFY] [admin_service.dart](file:///D:/FlutterProjects/money_manage_app/lib/services/admin_service.dart)
-- Update `getConfig()` and `watchConfig()` to be more robust. If the document `admin/config` does not exist in your Firebase database, `snapshot.data()` will be null, and the current code tries to read it, which might throw an error or return nothing, hiding the UI elements.
-- We will ensure it forcefully creates the default document if it's missing, guaranteeing the stream and futures return data.
+### 1. Data Models
+- **[NEW] `lib/models/subscription_plan.dart`**: Model for `id`, `name`, `days`, `price`.
+- **[MODIFY] `lib/models/user_profile.dart`**:
+    - Replace `isPremium` boolean with `premiumUntil` (DateTime).
+    - Add helper: `bool get isPremiumActive => premiumUntil != null && premiumUntil!.isAfter(DateTime.now());`
 
-### [MODIFY] [settings_screen.dart](file:///D:/FlutterProjects/money_manage_app/lib/screens/settings_screen.dart)
-- Add a visual indicator (like a quick Snackbar saying "You are X steps away from being a developer") so you know the taps are actually registering.
-- Ensure the `onTap` for the Developer tile is correctly hooked up to `_handleDevTap`.
+### 2. Admin Configuration (`admin_service.dart`)
+- **[MODIFY] `AdminConfig`**:
+    - Add `upiId` (String).
+    - Add `adminWhatsApp` (String) - e.g., "+919876543210".
+    - Add `plans` (List<SubscriptionPlan>).
+
+### 3. User Payment Flow (`settings_screen.dart`)
+- When a user taps "Upgrade", display the available plans.
+- After selecting a plan, show the specific UPI link and QR code.
+- Add an **"I Have Paid (Send Details on WhatsApp)"** button.
+- When tapped, use `url_launcher` to open WhatsApp targeting the `adminWhatsApp` number with a pre-filled message like: *"Hello, I have paid ₹[Price] for the [Plan Name] plan. My email is [User Email]. Please activate my account."*
+
+### 4. Admin Panel UI (`admin_panel_screen.dart`)
+- **Config Tab**: Edit `upiId`, `adminWhatsApp`, and manage the Subscription Plans list.
+- **Users Tab**:
+    - Display all users.
+    - Show their expiration date.
+    - Provide simple "+30 Days", "+365 Days", etc., buttons or a date picker to grant access manually after verifying the WhatsApp message.
+
+### 5. Dependencies
+- Add `qr_flutter` to `pubspec.yaml` for generating payment codes.
 
 ## Verification Plan
-
-### Manual Verification
-1.  Open the App and go to Settings.
-2.  The "Update App" button should immediately be visible under "About".
-3.  Tap the "Developer" tile. You should see a tiny message counting down the taps.
-4.  On the 7th tap, the password dialog MUST appear.
-5.  Entering `admin123` MUST open the `AdminPanelScreen`.
+1. Admin configures plans and WhatsApp number.
+2. User selects a plan, views the QR code, and taps the WhatsApp button.
+3. Verify WhatsApp opens with the correct pre-filled message and target number.
+4. Admin opens the "Manage Users" tab, finds the user's email, and adds the requested days.
+5. User's app updates to show "Premium Active until [Date]".

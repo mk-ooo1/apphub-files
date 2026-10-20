@@ -16,6 +16,10 @@ import 'pin_lock_screen.dart';
 import 'admin_panel_screen.dart';
 import '../services/security_service.dart';
 
+import 'package:qr_flutter/qr_flutter.dart';
+import '../models/user_profile.dart';
+import '../models/subscription_plan.dart';
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -255,6 +259,78 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showPaymentDialog(BuildContext context, AdminConfig config, SubscriptionPlan plan, User user) {
+    final upiUri = Uri(
+      scheme: 'upi',
+      host: 'pay',
+      queryParameters: {
+        'pa': config.upiId,
+        'pn': 'Money Manage App',
+        'am': plan.price.toString(),
+        'cu': 'INR',
+        'tn': 'Premium ${plan.days} Days',
+      },
+    );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Upgrade to ${plan.name}'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text('Pay ₹${plan.price} for ${plan.days} days of Premium.'),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                child: QrImageView(
+                  data: upiUri.toString(),
+                  version: QrVersions.auto,
+                  size: 200.0,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text('Scan with any UPI app', style: TextStyle(color: Colors.grey, fontSize: 12)),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.payment),
+                  label: const Text('Pay with UPI App on this phone'),
+                  onPressed: () async {
+                    if (await canLaunchUrl(upiUri)) {
+                      await launchUrl(upiUri, mode: LaunchMode.externalApplication);
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No UPI app found.')));
+                      }
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () async {
+              final waUri = Uri.parse('https://wa.me/${config.adminWhatsApp}?text=Hello Admin, I have paid ₹${plan.price} for the ${plan.name} plan. My email is ${user.email}. Please activate my premium account.');
+              if (await canLaunchUrl(waUri)) {
+                await launchUrl(waUri, mode: LaunchMode.externalApplication);
+              }
+              if (context.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('I Have Paid (Send to Admin)'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
@@ -275,6 +351,62 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               decoration: const BoxDecoration(color: AppColors.primary),
             ),
+
+          StreamBuilder<UserProfile?>(
+            stream: LedgerService().watchCurrentUserProfile(),
+            builder: (context, snapshot) {
+              final isPremium = snapshot.data?.isPremium == true;
+
+              return ListTile(
+                leading: Icon(
+                  isPremium ? Icons.workspace_premium : Icons.stars, 
+                  color: isPremium ? Colors.amber : Colors.grey,
+                  size: 32,
+                ),
+                title: Text(
+                  isPremium ? 'Premium Active' : 'Upgrade to Premium',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: isPremium ? Colors.amber.shade700 : null,
+                  ),
+                ),
+                subtitle: Text(
+                  isPremium ? 'Thank you for supporting Money Manage!' : 'Unlock all features and support development.',
+                  style: const TextStyle(fontSize: 12),
+                ),
+                onTap: isPremium ? null : () async {
+                  final config = await AdminService().getConfig();
+                  if (context.mounted) {
+                    showModalBottomSheet(
+                      context: context,
+                      builder: (ctx) => SafeArea(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Text('Select a Premium Plan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            ),
+                            if (config.plans.isEmpty) const Text('No plans currently available.'),
+                            ...config.plans.map((p) => ListTile(
+                              leading: const Icon(Icons.star, color: Colors.amber),
+                              title: Text(p.name),
+                              subtitle: Text('${p.days} Days'),
+                              trailing: Text('₹${p.price}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primary)),
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                _showPaymentDialog(context, config, p, user);
+                              },
+                            )),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                },
+              );
+            },
+          ),
           
           const _SectionHeader(title: 'App Preferences'),
           ListTile(
@@ -350,15 +482,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
 
           const _SectionHeader(title: 'Support & Feedback'),
-          ListTile(
-            leading: const Icon(Icons.stars, color: Colors.amber),
-            title: const Text('Support Development'),
-            subtitle: const Text('Check out special offers to support the app'),
-            onTap: () => launchUrl(
-              Uri.parse('https://omg10.com/4/11783062'),
-              mode: LaunchMode.externalApplication,
-            ),
-          ),
           ListTile(
             leading: const Icon(Icons.share_outlined),
             title: const Text('Invite Friends'),
@@ -469,6 +592,78 @@ class _SettingsScreenState extends State<SettingsScreen> {
 class _SectionHeader extends StatelessWidget {
   final String title;
   const _SectionHeader({required this.title});
+
+  void _showPaymentDialog(BuildContext context, AdminConfig config, SubscriptionPlan plan, User user) {
+    final upiUri = Uri(
+      scheme: 'upi',
+      host: 'pay',
+      queryParameters: {
+        'pa': config.upiId,
+        'pn': 'Money Manage App',
+        'am': plan.price.toString(),
+        'cu': 'INR',
+        'tn': 'Premium ${plan.days} Days',
+      },
+    );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Upgrade to ${plan.name}'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text('Pay ₹${plan.price} for ${plan.days} days of Premium.'),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                child: QrImageView(
+                  data: upiUri.toString(),
+                  version: QrVersions.auto,
+                  size: 200.0,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text('Scan with any UPI app', style: TextStyle(color: Colors.grey, fontSize: 12)),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.payment),
+                  label: const Text('Pay with UPI App on this phone'),
+                  onPressed: () async {
+                    if (await canLaunchUrl(upiUri)) {
+                      await launchUrl(upiUri, mode: LaunchMode.externalApplication);
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No UPI app found.')));
+                      }
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () async {
+              final waUri = Uri.parse('https://wa.me/${config.adminWhatsApp}?text=Hello Admin, I have paid ₹${plan.price} for the ${plan.name} plan. My email is ${user.email}. Please activate my premium account.');
+              if (await canLaunchUrl(waUri)) {
+                await launchUrl(waUri, mode: LaunchMode.externalApplication);
+              }
+              if (context.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('I Have Paid (Send to Admin)'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

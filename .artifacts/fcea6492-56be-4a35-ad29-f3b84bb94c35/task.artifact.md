@@ -1,4 +1,6 @@
-- [ ] Fix `AdminService` to handle missing Firebase documents safely
-- [ ] Add tap feedback to `SettingsScreen`'s `_handleDevTap`
-- [ ] Ensure "Update App" button renders correctly
-- [ ] Commit and push to GitHub
+- [x] Add `qr_flutter` dependency
+- [x] Create `SubscriptionPlan` and update `UserProfile` models
+- [x] Update `AdminService` and `LedgerService` with new logic
+- [x] Implement `AdminPanelScreen` for UPI, WhatsApp, Plans, and User Management
+- [x] Implement Payment Flow in `SettingsScreen` with QR and WhatsApp
+- [ ] Verify functionality
