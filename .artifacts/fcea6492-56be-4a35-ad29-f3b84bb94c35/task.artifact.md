@@ -1,3 +1,6 @@
-- [x] Ensure `AuthScreen` aggressively creates profiles
-- [x] Add debugging info to `AdminPanelScreen` user list
-- [x] Ensure `LedgerService` handles legacy empty docs gracefully
+- [x] Fix syntax errors in `dashboard_screen.dart`
+    - [x] Import `UserProfile`
+    - [x] Fix mismatched brackets in `showModalBottomSheet`
+- [x] Fix syntax errors in `main.dart`
+    - [x] Import `LedgerService`
+- [ ] Commit and push to GitHub

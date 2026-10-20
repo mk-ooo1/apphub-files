@@ -19,6 +19,7 @@ import 'split_bill_screen.dart';
 import 'reminders_screen.dart';
 import 'settings_screen.dart';
 import '../services/security_service.dart';
+import '../models/user_profile.dart';
 
 final _currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
 
@@ -197,47 +198,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                         ),
                         builder: (ctx) => SafeArea(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox(height: 8),
-                          Center(
-                            child: Container(
-                              width: 40,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade300,
-                                borderRadius: BorderRadius.circular(2),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(height: 8),
+                              Center(
+                                child: Container(
+                                  width: 40,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade300,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
                               ),
-                            ),
+                              const SizedBox(height: 16),
+                              ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                                  child: const Icon(Icons.person_add, color: AppColors.primary),
+                                ),
+                                title: Text(l10n.addContact, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                onTap: () {
+                                  Navigator.pop(ctx);
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const AddContactScreen()));
+                                },
+                              ),
+                              ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: Colors.orange.shade700.withValues(alpha: 0.1),
+                                  child: Icon(Icons.call_split, color: Colors.orange.shade700),
+                                ),
+                                title: Text(l10n.splitBill, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                onTap: () {
+                                  Navigator.pop(ctx);
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SplitBillScreen()));
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                            ],
                           ),
-                          const SizedBox(height: 16),
-                          ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                              child: const Icon(Icons.person_add, color: AppColors.primary),
-                            ),
-                            title: Text(l10n.addContact, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            onTap: () {
-                              Navigator.pop(ctx);
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const AddContactScreen()));
-                            },
-                          ),
-                          ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: Colors.orange.shade700.withValues(alpha: 0.1),
-                              child: Icon(Icons.call_split, color: Colors.orange.shade700),
-                            ),
-                            title: Text(l10n.splitBill, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            onTap: () {
-                              Navigator.pop(ctx);
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => const SplitBillScreen()));
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                      ),
-                    ),
+                        ),
+                      );
+                    },
                   );
                 },
               );

@@ -10,6 +10,7 @@ import 'services/notification_service.dart';
 import 'services/locale_provider.dart';
 import 'services/user_prefs_provider.dart';
 import 'services/security_service.dart';
+import 'services/ledger_service.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/auth_screen.dart';
 import 'screens/pin_lock_screen.dart';
