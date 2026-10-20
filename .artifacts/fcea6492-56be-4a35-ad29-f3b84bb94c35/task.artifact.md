@@ -1,4 +1,2 @@
-- [x] Condense `_SummaryCard` in Dashboard
-- [x] Combine FABs into a single Add menu BottomSheet
-- [x] Refine Search Bar styling in `_ContactsTab`
-- [ ] Verify UI improvements
+- [x] Move `_handleDevTap` to correct class scope
+- [ ] Verify compilation

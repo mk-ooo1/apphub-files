@@ -9,13 +9,69 @@ import 'package:provider/provider.dart';
 import '../services/locale_provider.dart';
 import '../services/user_prefs_provider.dart';
 import '../services/ledger_service.dart';
+import '../services/admin_service.dart';
 import '../utils/theme.dart';
 import 'legal_screen.dart';
 import 'pin_lock_screen.dart';
+import 'admin_panel_screen.dart';
 import '../services/security_service.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  int _devTapCount = 0;
+
+  void _handleDevTap() async {
+    _devTapCount++;
+    if (_devTapCount >= 7) {
+      _devTapCount = 0; // Reset
+      
+      // Fetch the actual admin config
+      final config = await AdminService().getConfig();
+
+      if (!mounted) return;
+
+      // Show password prompt
+      final pwdCtrl = TextEditingController();
+      final success = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Admin Access'),
+          content: TextField(
+            controller: pwdCtrl,
+            obscureText: true,
+            decoration: const InputDecoration(hintText: 'Enter Admin Password'),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () {
+                if (pwdCtrl.text == config.adminPassword) {
+                  Navigator.pop(ctx, true);
+                } else {
+                  ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Incorrect password')));
+                  Navigator.pop(ctx, false);
+                }
+              },
+              child: const Text('Enter'),
+            ),
+          ],
+        ),
+      );
+
+      if (success == true && mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => AdminPanelScreen(currentConfig: config)),
+        );
+      }
+    }
+  }
 
   Future<void> _logout(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
@@ -354,6 +410,22 @@ class SettingsScreen extends StatelessWidget {
           ),
 
           const _SectionHeader(title: 'About'),
+          StreamBuilder<AdminConfig>(
+            stream: AdminService().watchConfig(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const SizedBox.shrink();
+              final config = snapshot.data!;
+              return ListTile(
+                leading: const Icon(Icons.system_update, color: AppColors.primary),
+                title: const Text('Update App', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                subtitle: Text(config.updateMessage, style: const TextStyle(fontSize: 12)),
+                onTap: () => launchUrl(
+                  Uri.parse(config.updateUrl),
+                  mode: LaunchMode.externalApplication,
+                ),
+              );
+            },
+          ),
           FutureBuilder<PackageInfo>(
             future: PackageInfo.fromPlatform(),
             builder: (context, snapshot) {
@@ -366,10 +438,11 @@ class SettingsScreen extends StatelessWidget {
               );
             },
           ),
-          const ListTile(
-            leading: Icon(Icons.developer_mode),
-            title: Text('Developer'),
-            subtitle: Text('MKDevOps'),
+          ListTile(
+            leading: const Icon(Icons.developer_mode),
+            title: const Text('Developer'),
+            subtitle: const Text('MKDevOps'),
+            onTap: _handleDevTap,
           ),
           const SizedBox(height: 40),
         ],
