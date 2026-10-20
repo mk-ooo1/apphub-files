@@ -142,7 +142,9 @@ class _AppContentSwitcherState extends State<AppContentSwitcher> {
         if (authSnap.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
-        if (authSnap.hasData) {
+        if (authSnap.hasData && authSnap.data != null) {
+          // Aggressively ensure the profile exists every time the app starts logged in
+          LedgerService().createUserProfile(authSnap.data!);
           return const DashboardScreen();
         }
         return const AuthScreen();

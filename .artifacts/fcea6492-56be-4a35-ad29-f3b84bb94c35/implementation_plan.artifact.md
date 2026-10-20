@@ -1,33 +1,28 @@
-# Implementation Plan - Restrict Free Users & Fix Admin Visibility
+# Implementation Plan - Fix User Document Structure & Visibility
 
-This plan modifies the app to enforce a strict Premium-only model for creating data, refines the "Request Access" flow, and fixes the Admin Panel to properly display user profiles.
+This plan addresses the core issue preventing users from appearing in the Admin Panel: user documents are being created with random auto-IDs instead of the user's Firebase UID.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> **Admin Panel Empty Issue**: The "No users found" issue is because older user profiles might not have the `isPremium` field, and my previous code was strictly filtering for it. I will fix the filter to show *all* users.
-> **Strict Paywall**: Free users will still be able to *see* their old data, but the "Add Contact" and "Add Transaction" buttons will be hidden or disabled until you activate them.
+> The root cause of the "No users found" issue is that `watchAllUserProfiles()` looks for documents where the ID is the user's `UID`. If the documents are saved under random IDs (like `doc().set()`), they won't match the expected structure, and managing them (like granting premium) will fail because the app won't know which UID to update.
+>
+> We need to fix the registration flow to ensure users are explicitly saved with their Firebase UID as the document ID.
 
 ## Proposed Changes
 
-### 1. Fix Admin User List
-- **[MODIFY] `lib/services/ledger_service.dart`**: Update `watchAllUserProfiles()` to simply map all documents in the `users` collection, removing the restrictive `.where` filter that was hiding older accounts.
+### [MODIFY] `lib/services/ledger_service.dart`
+- In `createUserProfile(User user)`, ensure we are explicitly using `doc(user.uid).set(...)`. This is already in the current code, but we must verify it.
+- **The real issue**: If the user collection was somehow populated with random IDs in the past, those users won't map correctly. However, since the code currently uses `_db.collection('users').doc(user.uid)`, new logins *should* be correct.
 
-### 2. Enhance Activation Requests
-- **[MODIFY] `lib/models/user_profile.dart`**: Add a `String? pendingRequestPlan` field.
-- **[MODIFY] `lib/services/ledger_service.dart`**: Add a method `requestActivation(String uid, String planName)` that updates this field.
-- **[MODIFY] `lib/screens/settings_screen.dart`**: Update the "I Have Paid" button to call `requestActivation()` in addition to opening WhatsApp.
-- **[MODIFY] `lib/screens/admin_panel_screen.dart`**: Update the user list UI to clearly highlight users who have a `pendingRequestPlan`.
+### [MODIFY] `lib/screens/admin_panel_screen.dart`
+- Let's display the Document ID in the subtitle as a debugging step to confirm if the IDs are random or actual UIDs.
 
-### 3. Implement Strict Paywall
-- **[MODIFY] `lib/screens/dashboard_screen.dart`**:
-    - Wrap the Floating Action Buttons (`+ Add Contact`, `Split Bill`) in a check for `isPremiumActive`. If not premium, replace the buttons with an "Upgrade to Add Data" prompt, or hide them entirely.
-- **[MODIFY] `lib/screens/contact_detail_screen.dart`**:
-    - Hide the `Gave` and `Got` Floating Action Buttons if the user is not premium.
+### [MODIFY] `lib/screens/auth_screen.dart`
+- Ensure `createUserProfile` is called correctly *every* time a user successfully signs in, so their document is created or updated with the correct UID.
 
 ## Verification Plan
-1. Open the app as a free user. Verify that "Add Contact" and "Add Transaction" buttons are absent or disabled.
-2. Go to Settings, tap "Upgrade", select a plan, and tap "I Have Paid".
-3. Log in as Admin. Verify the "Manage Users" tab now lists users.
-4. Verify the user who requested activation has a "Pending: [Plan Name]" badge.
-5. Grant the user +30 days. Verify the user can now add contacts and transactions.
+1. Open the app and log in (or log out and log back in).
+2. Go to the Admin Panel.
+3. Verify that *your* user profile now appears.
+4. If old data was under random IDs, it will need to be manually migrated or ignored, but all future logins will be correct.

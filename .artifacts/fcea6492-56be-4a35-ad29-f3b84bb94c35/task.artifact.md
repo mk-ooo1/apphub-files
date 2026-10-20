@@ -1,8 +1,3 @@
-- [x] Update `UserProfile` with `pendingRequestPlan`
-- [x] Fix `LedgerService.watchAllUserProfiles()` filter
-- [x] Add `requestActivation` to `LedgerService`
-- [x] Connect "I Have Paid" to `requestActivation` in `SettingsScreen`
-- [x] Highlight pending requests in `AdminPanelScreen`
-- [x] Lock `DashboardScreen` FABs behind premium status
-- [x] Lock `ContactDetailScreen` FABs behind premium status
-- [ ] Commit and push to GitHub
+- [x] Ensure `AuthScreen` aggressively creates profiles
+- [x] Add debugging info to `AdminPanelScreen` user list
+- [x] Ensure `LedgerService` handles legacy empty docs gracefully

@@ -47,10 +47,15 @@ class LedgerService {
 
   Stream<List<UserProfile>> watchAllUserProfiles() {
     return _db.collection('users').snapshots().map((snap) {
-      return snap.docs
-          .where((d) => d.data().containsKey('email')) // Safe filter
-          .map((d) => UserProfile.fromMap(d.id, d.data()))
-          .toList();
+      final List<UserProfile> profiles = [];
+      for (final doc in snap.docs) {
+        // Only attempt to parse if the document has actual data fields,
+        // otherwise it's just a structural shell for subcollections.
+        if (doc.exists && doc.data().isNotEmpty) {
+          profiles.add(UserProfile.fromMap(doc.id, doc.data()));
+        }
+      }
+      return profiles;
     });
   }
 

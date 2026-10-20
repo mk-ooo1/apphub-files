@@ -292,6 +292,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(user.email, style: const TextStyle(fontSize: 12)),
+                  Text('UID: ${user.uid}', style: const TextStyle(fontSize: 9, color: Colors.grey)), // Debug info
                   if (isPending) 
                     Text('Plan: ${user.pendingRequestPlan}', style: const TextStyle(fontSize: 11, color: Colors.deepOrange, fontWeight: FontWeight.bold)),
                   if (user.premiumUntil != null)
