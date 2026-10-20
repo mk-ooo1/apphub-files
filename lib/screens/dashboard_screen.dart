@@ -167,32 +167,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 );
               }
 
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  FloatingActionButton.extended(
-                    heroTag: 'split',
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SplitBillScreen()),
+              return FloatingActionButton(
+                heroTag: 'add_menu',
+                backgroundColor: AppColors.primary,
+                child: const Icon(Icons.add),
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                     ),
-                    icon: const Icon(Icons.call_split),
-                    label: Text(l10n.splitBill),
-                    backgroundColor: Colors.orange.shade700,
-                  ),
-                  const SizedBox(height: 12),
-                  FloatingActionButton.extended(
-                    heroTag: 'add_contact',
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AddContactScreen()),
+                    builder: (ctx) => SafeArea(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(height: 8),
+                          Center(
+                            child: Container(
+                              width: 40,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade300,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                              child: const Icon(Icons.person_add, color: AppColors.primary),
+                            ),
+                            title: Text(l10n.addContact, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const AddContactScreen()));
+                            },
+                          ),
+                          ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.orange.shade700.withValues(alpha: 0.1),
+                              child: Icon(Icons.call_split, color: Colors.orange.shade700),
+                            ),
+                            title: Text(l10n.splitBill, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => const SplitBillScreen()));
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
                     ),
-                    icon: const Icon(Icons.person_add),
-                    label: Text(l10n.addContact),
-                    backgroundColor: AppColors.primary,
-                  ),
-                ],
+                  );
+                },
               );
             },
           );
@@ -303,11 +331,13 @@ class _ContactsTab extends StatelessWidget {
                         child: TextField(
                           decoration: InputDecoration(
                             hintText: l10n.searchContacts,
-                            prefixIcon: const Icon(Icons.search),
+                            prefixIcon: const Icon(Icons.search, size: 20),
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 8),
                             filled: true,
-                            fillColor: Colors.white,
+                            fillColor: Colors.grey.shade100,
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(8),
                               borderSide: BorderSide.none,
                             ),
                           ),
@@ -706,80 +736,55 @@ class _SummaryCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.primary,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            totals.net >= 0 ? l10n.netProfit : l10n.netLoss,
-            style: const TextStyle(color: Colors.white70, fontSize: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  totals.net >= 0 ? l10n.netProfit : l10n.netLoss,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _currency.format(totals.net.abs()),
+                  style: const TextStyle(
+                      color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
           ),
-          Text(
-            _currency.format(totals.net.abs()),
-            style: const TextStyle(
-                color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 14),
-          Row(
+          Container(width: 1, height: 40, color: Colors.white24, margin: const EdgeInsets.symmetric(horizontal: 16)),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Expanded(
-                child: _MiniStat(
-                  label: l10n.youWillGet,
-                  value: totals.toReceive,
-                  color: Colors.white,
-                ),
+              Row(
+                children: [
+                  Text(l10n.youWillGet, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                  const SizedBox(width: 8),
+                  Text(_currency.format(totals.toReceive), style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                ],
               ),
-              Container(width: 1, height: 30, color: Colors.white24),
-              Expanded(
-                child: _MiniStat(
-                  label: l10n.youWillGive,
-                  value: totals.toPay,
-                  color: Colors.white,
-                ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Text(l10n.youWillGive, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                  const SizedBox(width: 8),
+                  Text(_currency.format(totals.toPay), style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                ],
               ),
             ],
           ),
-          const Divider(color: Colors.white12, height: 24),
-          Center(
-            child: TextButton.icon(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ReportsScreen()),
-              ),
-              icon: const Icon(Icons.analytics_outlined, color: Colors.white, size: 18),
-              label: Text(l10n.reports, style: const TextStyle(color: Colors.white)),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                backgroundColor: Colors.white.withValues(alpha: 0.1),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MiniStat extends StatelessWidget {
-  final String label;
-  final double value;
-  final Color color;
-  const _MiniStat({required this.label, required this.value, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 12)),
-          Text(_currency.format(value),
-              style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w600)),
         ],
       ),
     );

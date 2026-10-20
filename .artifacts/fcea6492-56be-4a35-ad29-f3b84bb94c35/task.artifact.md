@@ -1,6 +1,4 @@
-- [x] Integrate Monetag link in `DashboardScreen`
-    - [x] Import `url_launcher`
-    - [x] Add "Support Us" card in `_ContactsTab`
-- [x] Integrate Monetag link in `SettingsScreen`
-    - [x] Add "Support Development" ListTile in `SettingsScreen`
-- [x] Verify links open correctly
+- [x] Condense `_SummaryCard` in Dashboard
+- [x] Combine FABs into a single Add menu BottomSheet
+- [x] Refine Search Bar styling in `_ContactsTab`
+- [ ] Verify UI improvements
