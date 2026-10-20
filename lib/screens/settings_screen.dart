@@ -30,6 +30,78 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   int _devTapCount = 0;
 
+  void _showPaymentDialog(BuildContext context, AdminConfig config, SubscriptionPlan plan, User user) {
+    final upiUri = Uri(
+      scheme: 'upi',
+      host: 'pay',
+      queryParameters: {
+        'pa': config.upiId,
+        'pn': 'Money Manage App',
+        'am': plan.price.toString(),
+        'cu': 'INR',
+        'tn': 'Premium ${plan.days} Days',
+      },
+    );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Upgrade to ${plan.name}'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text('Pay ₹${plan.price} for ${plan.days} days of Premium.'),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                child: QrImageView(
+                  data: upiUri.toString(),
+                  version: QrVersions.auto,
+                  size: 200.0,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text('Scan with any UPI app', style: TextStyle(color: Colors.grey, fontSize: 12)),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.payment),
+                  label: const Text('Pay with UPI App on this phone'),
+                  onPressed: () async {
+                    if (await canLaunchUrl(upiUri)) {
+                      await launchUrl(upiUri, mode: LaunchMode.externalApplication);
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No UPI app found.')));
+                      }
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () async {
+              final waUri = Uri.parse('https://wa.me/${config.adminWhatsApp}?text=Hello Admin, I have paid ₹${plan.price} for the ${plan.name} plan. My email is ${user.email}. Please activate my premium account.');
+              if (await canLaunchUrl(waUri)) {
+                await launchUrl(waUri, mode: LaunchMode.externalApplication);
+              }
+              if (context.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('I Have Paid (Send to Admin)'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _handleDevTap() async {
     _devTapCount++;
     
@@ -259,78 +331,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showPaymentDialog(BuildContext context, AdminConfig config, SubscriptionPlan plan, User user) {
-    final upiUri = Uri(
-      scheme: 'upi',
-      host: 'pay',
-      queryParameters: {
-        'pa': config.upiId,
-        'pn': 'Money Manage App',
-        'am': plan.price.toString(),
-        'cu': 'INR',
-        'tn': 'Premium ${plan.days} Days',
-      },
-    );
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Upgrade to ${plan.name}'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text('Pay ₹${plan.price} for ${plan.days} days of Premium.'),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-                child: QrImageView(
-                  data: upiUri.toString(),
-                  version: QrVersions.auto,
-                  size: 200.0,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text('Scan with any UPI app', style: TextStyle(color: Colors.grey, fontSize: 12)),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.payment),
-                  label: const Text('Pay with UPI App on this phone'),
-                  onPressed: () async {
-                    if (await canLaunchUrl(upiUri)) {
-                      await launchUrl(upiUri, mode: LaunchMode.externalApplication);
-                    } else {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No UPI app found.')));
-                      }
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () async {
-              final waUri = Uri.parse('https://wa.me/${config.adminWhatsApp}?text=Hello Admin, I have paid ₹${plan.price} for the ${plan.name} plan. My email is ${user.email}. Please activate my premium account.');
-              if (await canLaunchUrl(waUri)) {
-                await launchUrl(waUri, mode: LaunchMode.externalApplication);
-              }
-              if (context.mounted) Navigator.pop(ctx);
-            },
-            child: const Text('I Have Paid (Send to Admin)'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
@@ -355,7 +355,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           StreamBuilder<UserProfile?>(
             stream: LedgerService().watchCurrentUserProfile(),
             builder: (context, snapshot) {
-              final isPremium = snapshot.data?.isPremium == true;
+              final isPremium = snapshot.data?.isPremiumActive == true;
 
               return ListTile(
                 leading: Icon(
@@ -395,7 +395,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               trailing: Text('₹${p.price}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primary)),
                               onTap: () {
                                 Navigator.pop(ctx);
-                                _showPaymentDialog(context, config, p, user);
+                                if (user != null) {
+                                  _showPaymentDialog(context, config, p, user);
+                                }
                               },
                             )),
                           ],
@@ -592,78 +594,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 class _SectionHeader extends StatelessWidget {
   final String title;
   const _SectionHeader({required this.title});
-
-  void _showPaymentDialog(BuildContext context, AdminConfig config, SubscriptionPlan plan, User user) {
-    final upiUri = Uri(
-      scheme: 'upi',
-      host: 'pay',
-      queryParameters: {
-        'pa': config.upiId,
-        'pn': 'Money Manage App',
-        'am': plan.price.toString(),
-        'cu': 'INR',
-        'tn': 'Premium ${plan.days} Days',
-      },
-    );
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Upgrade to ${plan.name}'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text('Pay ₹${plan.price} for ${plan.days} days of Premium.'),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-                child: QrImageView(
-                  data: upiUri.toString(),
-                  version: QrVersions.auto,
-                  size: 200.0,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text('Scan with any UPI app', style: TextStyle(color: Colors.grey, fontSize: 12)),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.payment),
-                  label: const Text('Pay with UPI App on this phone'),
-                  onPressed: () async {
-                    if (await canLaunchUrl(upiUri)) {
-                      await launchUrl(upiUri, mode: LaunchMode.externalApplication);
-                    } else {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No UPI app found.')));
-                      }
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () async {
-              final waUri = Uri.parse('https://wa.me/${config.adminWhatsApp}?text=Hello Admin, I have paid ₹${plan.price} for the ${plan.name} plan. My email is ${user.email}. Please activate my premium account.');
-              if (await canLaunchUrl(waUri)) {
-                await launchUrl(waUri, mode: LaunchMode.externalApplication);
-              }
-              if (context.mounted) Navigator.pop(ctx);
-            },
-            child: const Text('I Have Paid (Send to Admin)'),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {

@@ -1,6 +1,4 @@
-- [x] Add `qr_flutter` dependency
-- [x] Create `SubscriptionPlan` and update `UserProfile` models
-- [x] Update `AdminService` and `LedgerService` with new logic
-- [x] Implement `AdminPanelScreen` for UPI, WhatsApp, Plans, and User Management
-- [x] Implement Payment Flow in `SettingsScreen` with QR and WhatsApp
-- [ ] Verify functionality
+- [ ] Fix `isPremium` reference
+- [x] Fix null safety for `user` variable
+- [x] Ensure `_showPaymentDialog` is in the correct scope
+- [x] Verify compilation
