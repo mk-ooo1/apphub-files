@@ -112,6 +112,115 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     );
   }
 
+  void _showUserDetailsDialog(BuildContext context, UserProfile user) {
+    final daysCtrl = TextEditingController();
+    final dateFmt = DateFormat('d MMM yyyy, h:mm a');
+    final isActive = user.isPremiumActive;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            bool isLifetime = user.isLifetimePremium;
+            
+            return AlertDialog(
+              title: Text(user.name),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Email: ${user.email.isEmpty ? "N/A" : user.email}'),
+                    Text('UID: ${user.uid}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Lifetime Premium', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Switch(
+                          value: isLifetime,
+                          onChanged: (val) async {
+                            setDialogState(() => isLifetime = val);
+                            await LedgerService().setLifetimePremium(user.uid, val);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(val ? 'Lifetime Premium Enabled' : 'Lifetime Premium Disabled'))
+                              );
+                              Navigator.pop(ctx); // Close dialog to refresh list
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    if (!isLifetime) ...[
+                      Text(
+                        'Status: ${isActive ? "Premium" : "Free"}', 
+                        style: TextStyle(fontWeight: FontWeight.bold, color: isActive ? Colors.green : Colors.grey)
+                      ),
+                      if (user.premiumUntil != null)
+                        Text('Expiry: ${dateFmt.format(user.premiumUntil!)}'),
+                      if (user.pendingRequestPlan != null)
+                        Text('Pending Request: ${user.pendingRequestPlan}', style: const TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold)),
+                      const Divider(height: 24),
+                      const Text('Add/Remove Days Manually:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: daysCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(signed: true),
+                        decoration: const InputDecoration(
+                          hintText: 'e.g. 15 or -5',
+                          suffixText: 'Days',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                    ] else ...[
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Column(
+                            children: [
+                              Icon(Icons.stars, color: Colors.amber, size: 48),
+                              SizedBox(height: 8),
+                              Text('Lifetime Premium Active', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                      )
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Close'),
+                ),
+                if (!isLifetime)
+                  FilledButton(
+                    onPressed: () async {
+                      final days = int.tryParse(daysCtrl.text);
+                      if (days != null) {
+                        Navigator.pop(ctx);
+                        await LedgerService().grantPremiumDays(user.uid, days);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Updated by $days days.')));
+                        }
+                      }
+                    },
+                    child: const Text('Apply Days'),
+                  ),
+              ],
+            );
+          }
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -271,6 +380,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
             final isPending = user.pendingRequestPlan != null;
             
             return ListTile(
+              onTap: () => _showUserDetailsDialog(context, user),
               leading: CircleAvatar(
                 backgroundColor: isActive ? Colors.amber.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.2),
                 child: Icon(isActive ? Icons.star : Icons.person, color: isActive ? Colors.amber : Colors.grey),
@@ -295,7 +405,9 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                   Text('UID: ${user.uid}', style: const TextStyle(fontSize: 9, color: Colors.grey)), // Debug info
                   if (isPending) 
                     Text('Plan: ${user.pendingRequestPlan}', style: const TextStyle(fontSize: 11, color: Colors.deepOrange, fontWeight: FontWeight.bold)),
-                  if (user.premiumUntil != null)
+                  if (user.isLifetimePremium)
+                    const Text('Lifetime Premium', style: TextStyle(fontSize: 11, color: Colors.amber, fontWeight: FontWeight.bold))
+                  else if (user.premiumUntil != null)
                     Text(
                       isActive ? 'Active till: ${dateFmt.format(user.premiumUntil!)}' : 'Expired on: ${dateFmt.format(user.premiumUntil!)}',
                       style: TextStyle(fontSize: 11, color: isActive ? Colors.green : Colors.red, fontWeight: FontWeight.bold),

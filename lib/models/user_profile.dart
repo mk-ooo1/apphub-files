@@ -6,6 +6,7 @@ class UserProfile {
   final String name;
   final DateTime? premiumUntil;
   final String? pendingRequestPlan;
+  final bool isLifetimePremium;
 
   UserProfile({
     required this.uid,
@@ -13,9 +14,10 @@ class UserProfile {
     required this.name,
     this.premiumUntil,
     this.pendingRequestPlan,
+    this.isLifetimePremium = false,
   });
 
-  bool get isPremiumActive => premiumUntil != null && premiumUntil!.isAfter(DateTime.now());
+  bool get isPremiumActive => isLifetimePremium || (premiumUntil != null && premiumUntil!.isAfter(DateTime.now()));
 
   Map<String, dynamic> toMap() {
     return {
@@ -24,6 +26,7 @@ class UserProfile {
       'name': name,
       'premiumUntil': premiumUntil != null ? Timestamp.fromDate(premiumUntil!) : null,
       'pendingRequestPlan': pendingRequestPlan,
+      'isLifetimePremium': isLifetimePremium,
     };
   }
 
@@ -41,6 +44,7 @@ class UserProfile {
       name: map['name'] ?? 'User',
       premiumUntil: exp,
       pendingRequestPlan: map['pendingRequestPlan'],
+      isLifetimePremium: map['isLifetimePremium'] == true,
     );
   }
 }

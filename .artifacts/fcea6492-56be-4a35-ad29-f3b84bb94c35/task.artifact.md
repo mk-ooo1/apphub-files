@@ -1,6 +1,3 @@
-- [x] Fix syntax errors in `dashboard_screen.dart`
-    - [x] Import `UserProfile`
-    - [x] Fix mismatched brackets in `showModalBottomSheet`
-- [x] Fix syntax errors in `main.dart`
-    - [x] Import `LedgerService`
-- [ ] Commit and push to GitHub
+- [ ] Simplify `watchAllUserProfiles()` filter to show all users
+- [ ] Verify `DashboardScreen` correctly locks based on `isPremiumActive`
+- [ ] Verify `ContactDetailScreen` correctly locks based on `isPremiumActive`

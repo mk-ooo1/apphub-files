@@ -65,6 +65,13 @@ class LedgerService {
     });
   }
 
+  Future<void> setLifetimePremium(String uid, bool isLifetime) async {
+    await _db.collection('users').doc(uid).update({
+      'isLifetimePremium': isLifetime,
+      'pendingRequestPlan': FieldValue.delete(), // Clear any pending requests
+    });
+  }
+
   Future<void> grantPremiumDays(String uid, int days) async {
     final docRef = _db.collection('users').doc(uid);
     final doc = await docRef.get();
