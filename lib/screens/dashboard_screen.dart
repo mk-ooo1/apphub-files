@@ -20,6 +20,7 @@ import 'reminders_screen.dart';
 import 'settings_screen.dart';
 import '../services/security_service.dart';
 import '../models/user_profile.dart';
+import '../widgets/calculator_sheet.dart';
 
 final _currency = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
 
@@ -45,6 +46,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         appBar: AppBar(
           title: Text(l10n.moneyManage),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.calculate_outlined),
+              tooltip: 'Calculator',
+              onPressed: () => CalculatorSheet.show(context),
+            ),
             IconButton(
               icon: const Icon(Icons.notifications_active_outlined),
               tooltip: l10n.reminders,

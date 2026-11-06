@@ -19,6 +19,7 @@ import '../services/security_service.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../models/user_profile.dart';
 import '../models/subscription_plan.dart';
+import '../widgets/calculator_sheet.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -419,6 +420,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           
           const _SectionHeader(title: 'App Preferences'),
+          ListTile(
+            leading: const Icon(Icons.calculate_outlined),
+            title: const Text('Smart Calculator'),
+            subtitle: const Text('Quick math calculations for expenses'),
+            onTap: () => CalculatorSheet.show(context),
+          ),
           ListTile(
             leading: const Icon(Icons.language),
             title: Text(l10n.language),

@@ -5,6 +5,7 @@ import '../models/contact.dart';
 import '../models/ledger_transaction.dart';
 import '../services/ledger_service.dart';
 import '../utils/theme.dart';
+import '../widgets/calculator_sheet.dart';
 
 class SplitBillScreen extends StatefulWidget {
   const SplitBillScreen({super.key});
@@ -89,10 +90,28 @@ class _SplitBillScreenState extends State<SplitBillScreen> {
                             controller: _amountCtrl,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Total Bill Amount',
                               prefixText: '₹ ',
-                              border: OutlineInputBorder(),
+                              border: const OutlineInputBorder(),
+                              suffixIcon: IconButton(
+                                icon: const Icon(Icons.calculate_outlined, color: AppColors.primary),
+                                tooltip: 'Smart Calculator',
+                                onPressed: () {
+                                  final currentVal = double.tryParse(_amountCtrl.text);
+                                  CalculatorSheet.show(
+                                    context,
+                                    initialAmount: currentVal,
+                                    onAmountSelected: (val) {
+                                      setState(() {
+                                        _amountCtrl.text = val % 1 == 0
+                                            ? val.toInt().toString()
+                                            : val.toStringAsFixed(2);
+                                      });
+                                    },
+                                  );
+                                },
+                              ),
                             ),
                           ),
                           const SizedBox(height: 12),

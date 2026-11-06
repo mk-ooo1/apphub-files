@@ -6,6 +6,7 @@ import '../models/ledger_transaction.dart';
 import '../services/ledger_service.dart';
 import '../services/notification_service.dart';
 import '../utils/theme.dart';
+import '../widgets/calculator_sheet.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final LedgerContact contact;
@@ -195,8 +196,28 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               style: TextStyle(fontSize: 28, color: color, fontWeight: FontWeight.bold),
               decoration: InputDecoration(
                 prefixText: '₹ ',
-                labelText: l10n.moneyManage, // Should be "Amount", but let's check if I have it in arb
+                labelText: 'Amount',
                 border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.calculate_outlined, color: AppColors.primary),
+                  tooltip: 'Smart Calculator',
+                  onPressed: _canEdit
+                      ? () {
+                          final currentVal = double.tryParse(_amountCtrl.text);
+                          CalculatorSheet.show(
+                            context,
+                            initialAmount: currentVal,
+                            onAmountSelected: (val) {
+                              setState(() {
+                                _amountCtrl.text = val % 1 == 0
+                                    ? val.toInt().toString()
+                                    : val.toStringAsFixed(2);
+                              });
+                            },
+                          );
+                        }
+                      : null,
+                ),
               ),
               validator: (v) {
                 final n = double.tryParse(v ?? '');
