@@ -3,6 +3,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import '../models/contact.dart';
 import '../models/ledger_transaction.dart';
@@ -220,7 +221,36 @@ class ReceiptService {
     );
   }
 
-  static Future<void> shareReceipt(File file, {String? text}) async {
-    await Share.shareXFiles([XFile(file.path)], text: text ?? 'Here is your export.');
+  static Future<void> shareReceipt(File file, {String? text, String? phone}) async {
+    final message = text ?? 'Here is your export.';
+
+    if (phone != null && phone.trim().isNotEmpty) {
+      String cleaned = phone.replaceAll(RegExp(r'\D'), '');
+      if (cleaned.length == 10) {
+        cleaned = '91$cleaned';
+      }
+
+      if (cleaned.isNotEmpty) {
+        final whatsappUri = Uri.parse('whatsapp://send?phone=$cleaned&text=${Uri.encodeComponent(message)}');
+        final waWebUri = Uri.parse('https://api.whatsapp.com/send?phone=$cleaned&text=${Uri.encodeComponent(message)}');
+
+        try {
+          if (await canLaunchUrl(whatsappUri)) {
+            await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+            await Share.shareXFiles([XFile(file.path)], text: message);
+            return;
+          } else if (await canLaunchUrl(waWebUri)) {
+            await launchUrl(waWebUri, mode: LaunchMode.externalApplication);
+            await Share.shareXFiles([XFile(file.path)], text: message);
+            return;
+          }
+        } catch (_) {
+          // If WhatsApp fails or is unavailable, fallback to system share below
+        }
+      }
+    }
+
+    // Direct fallback: standard system share sheet
+    await Share.shareXFiles([XFile(file.path)], text: message);
   }
 }

@@ -35,6 +35,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     await ReceiptService.shareReceipt(
       file,
       text: 'Receipt for ${widget.contact.name} — ${_currency.format(txn.amount)}',
+      phone: widget.contact.phone,
     );
   }
 
@@ -56,7 +57,11 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         txns: chronological,
       );
     }
-    await ReceiptService.shareReceipt(file, text: 'Money report for ${widget.contact.name}');
+    await ReceiptService.shareReceipt(
+      file,
+      text: 'Money report for ${widget.contact.name}',
+      phone: widget.contact.phone,
+    );
   }
 
   @override
