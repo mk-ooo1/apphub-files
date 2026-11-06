@@ -12,7 +12,11 @@ class CalculatorSheet extends StatefulWidget {
     this.initialAmount,
   });
 
-  static Future<double?> show(BuildContext context, {double? initialAmount, Function(double amount)? onAmountSelected}) {
+  static Future<double?> show(
+    BuildContext context, {
+    double? initialAmount,
+    Function(double amount)? onAmountSelected,
+  }) {
     return showModalBottomSheet<double>(
       context: context,
       isScrollControlled: true,
@@ -32,6 +36,7 @@ class _CalculatorSheetState extends State<CalculatorSheet> {
   String _expression = '';
   String _liveResult = '';
   final List<String> _history = [];
+  bool _showHistory = false;
 
   @override
   void initState() {
@@ -60,13 +65,12 @@ class _CalculatorSheetState extends State<CalculatorSheet> {
           final resStr = res % 1 == 0 ? res.toInt().toString() : res.toStringAsFixed(2);
           if (_expression.isNotEmpty && _expression != resStr) {
             _history.insert(0, '$_expression = $resStr');
-            if (_history.length > 5) _history.removeLast();
+            if (_history.length > 10) _history.removeLast();
           }
           _expression = resStr;
           _liveResult = '';
         }
       } else {
-        // Operators check to avoid invalid double operators like ++ or **
         if (_isOperator(value)) {
           if (_expression.isEmpty) {
             if (value == '-') _expression += value;
@@ -80,6 +84,25 @@ class _CalculatorSheetState extends State<CalculatorSheet> {
           }
         }
         _expression += value;
+      }
+      _calculateLiveResult();
+    });
+  }
+
+  void _applyGst(double rate, {bool isSubtract = false}) {
+    HapticFeedback.mediumImpact();
+    final currentVal = _evaluate() ?? double.tryParse(_expression) ?? 0.0;
+    if (currentVal == 0) return;
+
+    setState(() {
+      if (isSubtract) {
+        // Reverse GST: Base = Total / (1 + Rate/100)
+        final base = currentVal / (1 + (rate / 100));
+        _expression = base.toStringAsFixed(2);
+      } else {
+        // Add GST: Total = Current * (1 + Rate/100)
+        final total = currentVal * (1 + (rate / 100));
+        _expression = total.toStringAsFixed(2);
       }
       _calculateLiveResult();
     });
@@ -119,11 +142,11 @@ class _CalculatorSheetState extends State<CalculatorSheet> {
         String char = clean[i];
         if ('0123456789.'.contains(char)) {
           currentNum += char;
-        } else if ('+-*/%'.contains(char)) {
+        } else if ('+-*/%()'.contains(char)) {
           if (currentNum.isNotEmpty) {
             tokens.add(currentNum);
             currentNum = '';
-          } else if (char == '-' && (tokens.isEmpty || '+-*/%'.contains(tokens.last))) {
+          } else if (char == '-' && (tokens.isEmpty || '+-*/%('.contains(tokens.last))) {
             currentNum += char;
             continue;
           }
@@ -136,7 +159,7 @@ class _CalculatorSheetState extends State<CalculatorSheet> {
 
       if (tokens.isEmpty) return null;
 
-      // Pass 1: Multiply, Divide, Percent
+      // Pass 1: *, /, %
       List<String> pass1 = [];
       int i = 0;
       while (i < tokens.length) {
@@ -162,7 +185,7 @@ class _CalculatorSheetState extends State<CalculatorSheet> {
 
       if (pass1.isEmpty) return null;
 
-      // Pass 2: Add, Subtract
+      // Pass 2: +, -
       double result = double.tryParse(pass1[0]) ?? 0;
       int j = 1;
       while (j < pass1.length) {
@@ -186,6 +209,19 @@ class _CalculatorSheetState extends State<CalculatorSheet> {
       widget.onAmountSelected!(res);
     }
     Navigator.pop(context, res);
+  }
+
+  void _copyToClipboard() {
+    final text = _liveResult.isNotEmpty ? _liveResult : _expression;
+    if (text.isNotEmpty) {
+      Clipboard.setData(ClipboardData(text: text));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Copied "$text" to clipboard'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
   }
 
   @override
@@ -215,7 +251,7 @@ class _CalculatorSheetState extends State<CalculatorSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Handle bar
+            // Drag handle
             Container(
               width: 40,
               height: 4,
@@ -226,7 +262,7 @@ class _CalculatorSheetState extends State<CalculatorSheet> {
             ),
             const SizedBox(height: 12),
 
-            // Header title
+            // Header title & history toggle
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -247,75 +283,152 @@ class _CalculatorSheetState extends State<CalculatorSheet> {
                     ),
                   ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 20),
-                  onPressed: () => Navigator.pop(context),
-                  visualDensity: VisualDensity.compact,
+                Row(
+                  children: [
+                    if (_history.isNotEmpty)
+                      IconButton(
+                        icon: Icon(
+                          _showHistory ? Icons.keyboard_hide : Icons.history,
+                          color: _showHistory ? AppColors.primary : Colors.grey,
+                          size: 22,
+                        ),
+                        tooltip: 'History',
+                        onPressed: () => setState(() => _showHistory = !_showHistory),
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: () => Navigator.pop(context),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
                 ),
               ],
             ),
             const SizedBox(height: 8),
 
-            // Display Screen
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
+            // Calculation History Panel (Collapsible)
+            if (_showHistory && _history.isNotEmpty)
+              Container(
+                constraints: const BoxConstraints(maxHeight: 120),
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _history.length,
+                  itemBuilder: (ctx, idx) {
+                    final item = _history[idx];
+                    return InkWell(
+                      onTap: () {
+                        final parts = item.split('=');
+                        if (parts.length == 2) {
+                          setState(() {
+                            _expression = parts[1].trim();
+                            _calculateLiveResult();
+                            _showHistory = false;
+                          });
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(item, style: const TextStyle(fontSize: 13)),
+                            const Icon(Icons.touch_app_outlined, size: 14, color: Colors.grey),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  // History snippet if any
-                  if (_history.isNotEmpty)
-                    Text(
-                      _history.first,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
 
-                  // Active Expression
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    reverse: true,
-                    child: Text(
-                      _expression.isEmpty ? '0' : _expression,
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: _expression.isEmpty
-                            ? Colors.grey.shade400
-                            : (isDark ? Colors.white : Colors.black87),
-                        letterSpacing: 1,
-                      ),
-                    ),
+            // Display Screen with Copy option
+            GestureDetector(
+              onLongPress: _copyToClipboard,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
                   ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _history.isNotEmpty ? _history.first : 'Tap number or operator',
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                        ),
+                        InkWell(
+                          onTap: _copyToClipboard,
+                          child: const Icon(Icons.copy, size: 14, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
 
-                  // Live Calculated Result Preview
-                  if (_liveResult.isNotEmpty && _liveResult != _expression)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
+                    // Active Expression
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      reverse: true,
                       child: Text(
-                        '= $_liveResult',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
+                        _expression.isEmpty ? '0' : _expression,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: _expression.isEmpty
+                              ? Colors.grey.shade400
+                              : (isDark ? Colors.white : Colors.black87),
+                          letterSpacing: 1,
                         ),
                       ),
                     ),
+
+                    // Live Calculated Result Preview
+                    if (_liveResult.isNotEmpty && _liveResult != _expression)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          '= $_liveResult',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Quick GST / Tax Action Chips
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  const Text('GST Quick: ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+                  _buildGstChip('+5%', () => _applyGst(5)),
+                  _buildGstChip('+12%', () => _applyGst(12)),
+                  _buildGstChip('+18%', () => _applyGst(18)),
+                  _buildGstChip('+28%', () => _applyGst(28)),
+                  _buildGstChip('-18% (Base)', () => _applyGst(18, isSubtract: true), isOutline: true),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
 
             // Calculator Keypad Grid
             GridView.count(
@@ -352,9 +465,9 @@ class _CalculatorSheetState extends State<CalculatorSheet> {
                 _buildCalcButton('=', color: AppColors.primary, textColor: Colors.white, isFilled: true),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
-            // Bottom Action (If opened to return amount or general use)
+            // Bottom Action
             SizedBox(
               width: double.infinity,
               height: 48,
@@ -376,6 +489,34 @@ class _CalculatorSheetState extends State<CalculatorSheet> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGstChip(String label, VoidCallback onTap, {bool isOutline = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: isOutline ? Colors.transparent : AppColors.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
+            ),
+          ),
         ),
       ),
     );
