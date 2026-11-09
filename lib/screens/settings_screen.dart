@@ -20,6 +20,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../models/user_profile.dart';
 import '../models/subscription_plan.dart';
 import '../widgets/calculator_sheet.dart';
+import 'inventory_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -420,6 +421,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           
           const _SectionHeader(title: 'App Preferences'),
+          ListTile(
+            leading: const Icon(Icons.inventory_2_outlined),
+            title: const Text('Inventory & Stock Management'),
+            subtitle: const Text('Track products, stock in/out & low stock alerts'),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const InventoryScreen()),
+            ),
+          ),
           ListTile(
             leading: const Icon(Icons.calculate_outlined),
             title: const Text('Smart Calculator'),

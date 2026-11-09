@@ -18,6 +18,7 @@ import 'pin_lock_screen.dart';
 import 'split_bill_screen.dart';
 import 'reminders_screen.dart';
 import 'settings_screen.dart';
+import 'inventory_screen.dart';
 import '../services/security_service.dart';
 import '../models/user_profile.dart';
 import '../widgets/calculator_sheet.dart';
@@ -46,6 +47,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         appBar: AppBar(
           title: Text(l10n.moneyManage),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.inventory_2_outlined),
+              tooltip: 'Inventory & Stock',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const InventoryScreen()),
+              ),
+            ),
             IconButton(
               icon: const Icon(Icons.calculate_outlined),
               tooltip: 'Calculator',
