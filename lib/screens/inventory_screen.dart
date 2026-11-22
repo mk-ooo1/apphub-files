@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../models/product_stock.dart';
 import '../services/inventory_service.dart';
@@ -27,101 +28,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
     super.dispose();
   }
 
-  void _showAdjustStockDialog(ProductStock product, StockLogType type) {
-    final qtyCtrl = TextEditingController();
-    final noteCtrl = TextEditingController();
-    final isStockIn = type == StockLogType.stockIn;
-
-    showDialog(
+  void _openQuickAdjustSheet(ProductStock product, {double initialDelta = 0.0}) {
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              isStockIn ? Icons.add_circle_outline : Icons.remove_circle_outline,
-              color: isStockIn ? Colors.green : Colors.red,
-            ),
-            const SizedBox(width: 8),
-            Text(isStockIn ? 'Stock In (Add)' : 'Stock Out (Reduce)'),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                product.name,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              Text(
-                'Current Stock: ${product.quantity % 1 == 0 ? product.quantity.toInt() : product.quantity.toStringAsFixed(2)} ${product.unit}',
-                style: const TextStyle(color: Colors.grey, fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: qtyCtrl,
-                autofocus: true,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: isStockIn ? 'Quantity to Add *' : 'Quantity to Reduce *',
-                  suffixText: product.unit,
-                  border: const OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: noteCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Note / Reason (Optional)',
-                  hintText: 'e.g. Purchase invoice, Customer order, Damage',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: isStockIn ? Colors.green : Colors.red,
-            ),
-            onPressed: () async {
-              final qty = double.tryParse(qtyCtrl.text.trim());
-              if (qty == null || qty <= 0) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please enter a valid quantity')),
-                );
-                return;
-              }
-
-              Navigator.pop(ctx);
-              await _service.adjustStock(
-                product: product,
-                changeQty: qty,
-                type: type,
-                note: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim(),
-              );
-
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      isStockIn
-                          ? 'Added $qty ${product.unit} to ${product.name}'
-                          : 'Reduced $qty ${product.unit} from ${product.name}',
-                    ),
-                  ),
-                );
-              }
-            },
-            child: Text(isStockIn ? 'Add Stock' : 'Reduce Stock'),
-          ),
-        ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _StockQuickAdjustSheet(
+        product: product,
+        service: _service,
+        initialDelta: initialDelta,
       ),
     );
   }
@@ -453,62 +368,139 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           final isOut = product.isOutOfStock;
                           final isLow = product.isLowStock;
 
-                          Color statusColor = Colors.green;
-                          String statusText = 'In Stock';
+                          Color statusColor;
+                          Color bgTint;
+                          String statusText;
+                          IconData statusIcon;
+
                           if (isOut) {
-                            statusColor = Colors.red;
+                            statusColor = isDark ? Colors.red.shade400 : Colors.red.shade700;
+                            bgTint = isDark
+                                ? Colors.red.shade900.withValues(alpha: 0.35)
+                                : Colors.red.shade50.withValues(alpha: 0.55);
                             statusText = 'Out of Stock';
+                            statusIcon = Icons.cancel;
                           } else if (isLow) {
-                            statusColor = Colors.amber.shade800;
+                            statusColor = isDark ? Colors.amber.shade400 : Colors.amber.shade900;
+                            bgTint = isDark
+                                ? Colors.amber.shade900.withValues(alpha: 0.35)
+                                : Colors.amber.shade50.withValues(alpha: 0.55);
                             statusText = 'Low Stock';
+                            statusIcon = Icons.warning_amber_rounded;
+                          } else {
+                            statusColor = isDark ? Colors.green.shade400 : Colors.green.shade700;
+                            bgTint = isDark
+                                ? Colors.green.shade900.withValues(alpha: 0.25)
+                                : Colors.green.shade50.withValues(alpha: 0.4);
+                            statusText = 'Healthy Stock';
+                            statusIcon = Icons.check_circle_outline;
                           }
 
-                          return Card(
-                            elevation: 1.5,
-                            margin: const EdgeInsets.only(bottom: 10),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                            child: Padding(
-                              padding: const EdgeInsets.all(14.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Product Title, Category, Status Tag
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: bgTint,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border(
+                                left: BorderSide(color: statusColor, width: 6),
+                                top: BorderSide(color: statusColor.withValues(alpha: 0.2), width: 1),
+                                right: BorderSide(color: statusColor.withValues(alpha: 0.2), width: 1),
+                                bottom: BorderSide(color: statusColor.withValues(alpha: 0.2), width: 1),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: statusColor.withValues(alpha: 0.08),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(16),
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                onTap: () => _openQuickAdjustSheet(product),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(14.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                  // Product Header with Name, Category/SKU, Traffic Light Pill & Menu
                                   Row(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Container(
-                                        padding: const EdgeInsets.all(10),
+                                        padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: statusColor.withValues(alpha: 0.1),
+                                          color: statusColor.withValues(alpha: 0.15),
                                           shape: BoxShape.circle,
                                         ),
-                                        child: Icon(Icons.inventory_2, color: statusColor, size: 22),
+                                        child: Icon(statusIcon, color: statusColor, size: 20),
                                       ),
-                                      const SizedBox(width: 12),
+                                      const SizedBox(width: 10),
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              product.name,
-                                              style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    product.name,
+                                                    style: const TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                // Traffic Light Status Badge Pill
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                  decoration: BoxDecoration(
+                                                    color: statusColor.withValues(alpha: 0.15),
+                                                    borderRadius: BorderRadius.circular(12),
+                                                    border: Border.all(color: statusColor.withValues(alpha: 0.4)),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      Container(
+                                                        width: 6,
+                                                        height: 6,
+                                                        decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        statusText,
+                                                        style: TextStyle(
+                                                          fontSize: 10,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: statusColor,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                            const SizedBox(height: 2),
+                                            const SizedBox(height: 4),
                                             Row(
                                               children: [
                                                 if (product.category != null && product.category!.isNotEmpty) ...[
                                                   Container(
                                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                                     decoration: BoxDecoration(
-                                                      color: Colors.grey.shade200,
+                                                      color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
                                                       borderRadius: BorderRadius.circular(4),
                                                     ),
                                                     child: Text(
                                                       product.category!,
-                                                      style: TextStyle(fontSize: 10, color: Colors.grey.shade800),
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        color: isDark ? Colors.grey.shade300 : Colors.grey.shade800,
+                                                      ),
                                                     ),
                                                   ),
                                                   const SizedBox(width: 6),
@@ -557,27 +549,17 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                       Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Row(
-                                            children: [
-                                              Container(
-                                                width: 8,
-                                                height: 8,
-                                                decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
-                                              ),
-                                              const SizedBox(width: 6),
-                                              Text(
-                                                'Stock: ${product.quantity % 1 == 0 ? product.quantity.toInt() : product.quantity.toStringAsFixed(2)} ${product.unit}',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
-                                                  color: isOut ? Colors.red : null,
-                                                ),
-                                              ),
-                                            ],
+                                          Text(
+                                            'Stock Quantity',
+                                            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                                           ),
                                           Text(
-                                            statusText,
-                                            style: TextStyle(fontSize: 11, color: statusColor, fontWeight: FontWeight.w600),
+                                            '${product.quantity % 1 == 0 ? product.quantity.toInt() : product.quantity.toStringAsFixed(2)} ${product.unit}',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                              color: statusColor,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -611,7 +593,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                           ),
                                           icon: const Icon(Icons.add_circle_outline, size: 16),
                                           label: const Text('+ Stock In'),
-                                          onPressed: () => _showAdjustStockDialog(product, StockLogType.stockIn),
+                                          onPressed: () => _openQuickAdjustSheet(product, initialDelta: 1),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
@@ -625,7 +607,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                           ),
                                           icon: const Icon(Icons.remove_circle_outline, size: 16),
                                           label: const Text('- Stock Out'),
-                                          onPressed: () => _showAdjustStockDialog(product, StockLogType.stockOut),
+                                          onPressed: () => _openQuickAdjustSheet(product, initialDelta: -1),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
@@ -640,9 +622,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 ],
                               ),
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        ),
+                      );
+                    },
+                    ),
               ),
             ],
           );
@@ -699,6 +683,324 @@ class _InventoryScreenState extends State<InventoryScreen> {
       onSelected: (selected) {
         if (selected) setState(() => _filterStatus = value);
       },
+    );
+  }
+}
+
+class _StockQuickAdjustSheet extends StatefulWidget {
+  final ProductStock product;
+  final InventoryService service;
+  final double initialDelta;
+
+  const _StockQuickAdjustSheet({
+    required this.product,
+    required this.service,
+    this.initialDelta = 0.0,
+  });
+
+  @override
+  State<_StockQuickAdjustSheet> createState() => _StockQuickAdjustSheetState();
+}
+
+class _StockQuickAdjustSheetState extends State<_StockQuickAdjustSheet> {
+  late double _delta = widget.initialDelta;
+  final _noteCtrl = TextEditingController();
+  late final _customDeltaCtrl = TextEditingController(
+    text: _delta == 0 ? '0' : (_delta % 1 == 0 ? _delta.toInt().toString() : _delta.toStringAsFixed(1)),
+  );
+
+  @override
+  void dispose() {
+    _noteCtrl.dispose();
+    _customDeltaCtrl.dispose();
+    super.dispose();
+  }
+
+  void _addDelta(double amount) {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _delta += amount;
+      _customDeltaCtrl.text = _delta % 1 == 0 ? _delta.toInt().toString() : _delta.toStringAsFixed(1);
+    });
+  }
+
+  void _setDelta(double val) {
+    setState(() {
+      _delta = val;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final currentQty = widget.product.quantity;
+    final newQty = (currentQty + _delta).clamp(0.0, double.infinity);
+
+    final isAddition = _delta > 0;
+    final isSubtraction = _delta < 0;
+
+    Color accentColor = AppColors.primary;
+    if (isAddition) accentColor = Colors.green.shade700;
+    if (isSubtraction) accentColor = Colors.red.shade700;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey.shade900 : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: EdgeInsets.only(
+        top: 12,
+        left: 20,
+        right: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle Bar
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade400,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Header info
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.product.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'Category: ${widget.product.category ?? "General"} | Unit: ${widget.product.unit}',
+                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            // Live Stock Forecast Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+              decoration: BoxDecoration(
+                color: accentColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: accentColor.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Column(
+                    children: [
+                      const Text('Current Stock', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${currentQty % 1 == 0 ? currentQty.toInt() : currentQty.toStringAsFixed(1)} ${widget.product.unit}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                    ],
+                  ),
+                  Icon(Icons.arrow_forward, color: accentColor),
+                  Column(
+                    children: [
+                      Text('New Total', style: TextStyle(fontSize: 11, color: accentColor, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${newQty % 1 == 0 ? newQty.toInt() : newQty.toStringAsFixed(1)} ${widget.product.unit}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          color: accentColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // Big Thumb Counter (+ / - Buttons)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Big Decrement Button
+                InkWell(
+                  onTap: () => _addDelta(-1),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade100,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(Icons.remove, color: Colors.red.shade800, size: 28),
+                  ),
+                ),
+                const SizedBox(width: 16),
+
+                // Active Adjustment Value Display / Input
+                SizedBox(
+                  width: 90,
+                  child: TextField(
+                    controller: _customDeltaCtrl,
+                    textAlign: TextAlign.center,
+                    keyboardType: const TextInputType.numberWithOptions(signed: true, decimal: true),
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: accentColor,
+                    ),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      hintText: '0',
+                    ),
+                    onChanged: (val) {
+                      final parsed = double.tryParse(val) ?? 0.0;
+                      _setDelta(parsed);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+
+                // Big Increment Button
+                InkWell(
+                  onTap: () => _addDelta(1),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade100,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(Icons.add, color: Colors.green.shade800, size: 28),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Preset Quick Adjustment Pills
+            const Text('Quick Preset Adjustments:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+            const SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildPresetPill('+1', 1, Colors.green),
+                  _buildPresetPill('+5', 5, Colors.green),
+                  _buildPresetPill('+10', 10, Colors.green),
+                  _buildPresetPill('+50', 50, Colors.green),
+                  _buildPresetPill('+100', 100, Colors.green),
+                  const SizedBox(width: 6),
+                  _buildPresetPill('-1', -1, Colors.red),
+                  _buildPresetPill('-5', -5, Colors.red),
+                  _buildPresetPill('-10', -10, Colors.red),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Reason / Note Field
+            TextField(
+              controller: _noteCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Note / Reason (e.g. Sale, Supplier Delivery, Damage)',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // Confirm & Save Button
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: _delta == 0 ? Colors.grey : accentColor,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                onPressed: _delta == 0
+                    ? null
+                    : () async {
+                        HapticFeedback.mediumImpact();
+                        final type = _delta > 0
+                            ? StockLogType.stockIn
+                            : (_delta < 0 ? StockLogType.stockOut : StockLogType.adjustment);
+
+                        Navigator.pop(context);
+                        await widget.service.adjustStock(
+                          product: widget.product,
+                          changeQty: _delta.abs(),
+                          type: type,
+                          note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
+                        );
+                      },
+                icon: const Icon(Icons.check_circle_outline),
+                label: Text(
+                  _delta == 0
+                      ? 'No Adjustment'
+                      : 'Confirm Adjustment (${_delta > 0 ? "+$_delta" : "$_delta"} ${widget.product.unit})',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPresetPill(String label, double val, MaterialColor color) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: InkWell(
+        onTap: () => _addDelta(val),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: color.shade50,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.shade300),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+              color: color.shade800,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
