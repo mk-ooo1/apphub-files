@@ -14,6 +14,10 @@ class ProductStock {
   final double minStock;
   final DateTime updatedAt;
 
+  // Optional FEFO Expiry Tracking
+  final bool trackExpiry;
+  final DateTime? expiryDate;
+
   ProductStock({
     required this.id,
     required this.name,
@@ -25,6 +29,8 @@ class ProductStock {
     this.unit = 'Pcs',
     this.minStock = 5.0,
     required this.updatedAt,
+    this.trackExpiry = false,
+    this.expiryDate,
   });
 
   bool get isLowStock => quantity <= minStock;
@@ -32,6 +38,21 @@ class ProductStock {
   double get totalBuyValue => quantity * buyPrice;
   double get totalSellValue => quantity * sellPrice;
   double get potentialProfit => totalSellValue - totalBuyValue;
+
+  // Expiry getters
+  bool get isExpired =>
+      trackExpiry && expiryDate != null && expiryDate!.isBefore(DateTime.now());
+
+  bool get isExpiringSoon {
+    if (!trackExpiry || expiryDate == null || isExpired) return false;
+    final days = expiryDate!.difference(DateTime.now()).inDays;
+    return days >= 0 && days <= 30;
+  }
+
+  int? get daysUntilExpiry {
+    if (!trackExpiry || expiryDate == null) return null;
+    return expiryDate!.difference(DateTime.now()).inDays;
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -45,6 +66,8 @@ class ProductStock {
       'unit': unit,
       'minStock': minStock,
       'updatedAt': Timestamp.fromDate(updatedAt),
+      'trackExpiry': trackExpiry,
+      'expiryDate': expiryDate != null ? Timestamp.fromDate(expiryDate!) : null,
     };
   }
 
@@ -60,6 +83,8 @@ class ProductStock {
       unit: map['unit'] ?? 'Pcs',
       minStock: (map['minStock'] ?? 5.0).toDouble(),
       updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      trackExpiry: map['trackExpiry'] == true,
+      expiryDate: (map['expiryDate'] as Timestamp?)?.toDate(),
     );
   }
 }

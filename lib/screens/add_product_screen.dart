@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../models/product_stock.dart';
 import '../services/inventory_service.dart';
 import '../utils/theme.dart';
@@ -34,6 +35,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   String _selectedUnit = 'Pcs';
   bool _saving = false;
+  late bool _trackExpiry = widget.existingProduct?.trackExpiry ?? false;
+  late DateTime? _expiryDate = widget.existingProduct?.expiryDate;
 
   final List<String> _unitOptions = ['Pcs', 'Kg', 'Ltr', 'Box', 'Meter', 'Packet', 'Set', 'Gm'];
 
@@ -83,6 +86,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
         unit: _selectedUnit,
         minStock: minStock,
         updatedAt: DateTime.now(),
+        trackExpiry: _trackExpiry,
+        expiryDate: _trackExpiry ? _expiryDate : null,
       );
 
       if (_isEditing) {
@@ -263,6 +268,53 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 24),
+
+            // Optional Expiry Tracking Section (FEFO)
+            _buildSectionTitle('Optional Batch Expiry (FEFO)'),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Track Expiry Date'),
+              subtitle: const Text('Enable for food, beauty, or perishable products'),
+              value: _trackExpiry,
+              activeThumbColor: AppColors.primary,
+              onChanged: (val) {
+                setState(() {
+                  _trackExpiry = val;
+                  if (val && _expiryDate == null) {
+                    _expiryDate = DateTime.now().add(const Duration(days: 90));
+                  }
+                });
+              },
+            ),
+            if (_trackExpiry) ...[
+              const SizedBox(height: 8),
+              ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(color: Colors.grey.shade300),
+                ),
+                leading: const Icon(Icons.event_outlined, color: AppColors.primary),
+                title: const Text('Batch Expiry Date'),
+                subtitle: Text(
+                  _expiryDate != null ? DateFormat('d MMM yyyy').format(_expiryDate!) : 'Select Expiry Date',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                trailing: const Icon(Icons.calendar_month),
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _expiryDate ?? DateTime.now().add(const Duration(days: 90)),
+                    firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                    lastDate: DateTime(2040),
+                  );
+                  if (picked != null) {
+                    setState(() => _expiryDate = picked);
+                  }
+                },
+              ),
+            ],
             const SizedBox(height: 32),
 
             // Submit Button

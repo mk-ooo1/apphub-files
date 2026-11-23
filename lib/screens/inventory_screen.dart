@@ -28,6 +28,156 @@ class _InventoryScreenState extends State<InventoryScreen> {
     super.dispose();
   }
 
+  void _openBarcodeScannerSheet() {
+    final barcodeCtrl = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: EdgeInsets.only(
+          top: 16,
+          left: 20,
+          right: 20,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+        ),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade400,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.qr_code_scanner, color: AppColors.primary, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Barcode & SKU Scanner', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                        Text('Scan or enter SKU to filter instantly', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Scanner Visual Viewfinder
+              Container(
+                height: 130,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.black87,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.primary, width: 2),
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    const Icon(Icons.qr_code_scanner, color: Colors.white70, size: 56),
+                    Positioned(
+                      bottom: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text('Continuous Scanner Ready', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // SKU Barcode Input Field
+              TextField(
+                controller: barcodeCtrl,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'Enter or scan SKU / Barcode code...',
+                  prefixIcon: const Icon(Icons.barcode_reader),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.arrow_forward),
+                    onPressed: () {
+                      final text = barcodeCtrl.text.trim();
+                      if (text.isNotEmpty) {
+                        Navigator.pop(ctx);
+                        setState(() {
+                          _searchCtrl.text = text;
+                          _searchQuery = text;
+                        });
+                      }
+                    },
+                  ),
+                ),
+                onSubmitted: (val) {
+                  if (val.trim().isNotEmpty) {
+                    Navigator.pop(ctx);
+                    setState(() {
+                      _searchCtrl.text = val.trim();
+                      _searchQuery = val.trim();
+                    });
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: () {
+                    final text = barcodeCtrl.text.trim();
+                    Navigator.pop(ctx);
+                    if (text.isNotEmpty) {
+                      setState(() {
+                        _searchCtrl.text = text;
+                        _searchQuery = text;
+                      });
+                    }
+                  },
+                  icon: const Icon(Icons.search),
+                  label: const Text('Search / Filter SKU', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _openQuickAdjustSheet(ProductStock product, {double initialDelta = 0.0}) {
     showModalBottomSheet(
       context: context,
@@ -196,120 +346,143 @@ class _InventoryScreenState extends State<InventoryScreen> {
           final allProducts = snapshot.data!;
 
           // Summary Metrics
-          final totalProducts = allProducts.length;
           final lowStockCount = allProducts.where((p) => p.isLowStock).length;
           final outOfStockCount = allProducts.where((p) => p.isOutOfStock).length;
           final totalValuation = allProducts.fold<double>(0, (sum, p) => sum + p.totalBuyValue);
           final totalRetailValuation = allProducts.fold<double>(0, (sum, p) => sum + p.totalSellValue);
 
-          // Filtering
-          final filteredProducts = allProducts.where((p) {
-            final matchesQuery = _searchQuery.isEmpty ||
-                p.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                (p.sku != null && p.sku!.toLowerCase().contains(_searchQuery.toLowerCase())) ||
-                (p.category != null && p.category!.toLowerCase().contains(_searchQuery.toLowerCase()));
+          return StreamBuilder<List<StockLog>>(
+            stream: _service.watchAllStockLogs(),
+            builder: (context, logSnapshot) {
+              final allLogs = logSnapshot.data ?? [];
+              final now = DateTime.now();
+              final todayStart = DateTime(now.year, now.month, now.day);
+              final todayLogs = allLogs.where((l) => l.date.isAfter(todayStart)).toList();
 
-            if (!matchesQuery) return false;
+              final todayIn = todayLogs
+                  .where((l) => l.type == StockLogType.stockIn)
+                  .fold<double>(0, (sum, l) => sum + l.quantity);
+              final todayOut = todayLogs
+                  .where((l) => l.type == StockLogType.stockOut)
+                  .fold<double>(0, (sum, l) => sum + l.quantity);
 
-            if (_filterStatus == 'low') return p.isLowStock && !p.isOutOfStock;
-            if (_filterStatus == 'out') return p.isOutOfStock;
-            return true;
-          }).toList();
+              // Filtering
+              final filteredProducts = allProducts.where((p) {
+                final matchesQuery = _searchQuery.isEmpty ||
+                    p.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                    (p.sku != null && p.sku!.toLowerCase().contains(_searchQuery.toLowerCase())) ||
+                    (p.category != null && p.category!.toLowerCase().contains(_searchQuery.toLowerCase()));
 
-          return Column(
-            children: [
-              // 1. Dashboard Header Summary Card
-              Container(
-                margin: const EdgeInsets.all(12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.grey.shade800 : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Row(
+                if (!matchesQuery) return false;
+
+                if (_filterStatus == 'low') return p.isLowStock && !p.isOutOfStock;
+                if (_filterStatus == 'out') return p.isOutOfStock;
+                return true;
+              }).toList();
+
+              return Column(
+                children: [
+                  // 1. 3-Metric Executive Header
+                  Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Row(
                       children: [
-                        _buildSummaryItem(
-                          title: 'Total Items',
-                          value: totalProducts.toString(),
-                          icon: Icons.inventory,
-                          color: AppColors.primary,
+                        // KPI 1: Total Stock Value
+                        Expanded(
+                          child: _buildExecutiveKpiCard(
+                            title: 'Stock Value',
+                            value: _currency.format(totalValuation),
+                            subtitle: 'Retail: ${_currency.format(totalRetailValuation)}',
+                            icon: Icons.account_balance_wallet_outlined,
+                            accentColor: AppColors.primary,
+                            isDark: isDark,
+                          ),
                         ),
-                        _buildSummaryItem(
-                          title: 'Low Stock',
-                          value: lowStockCount.toString(),
-                          icon: Icons.warning_amber_rounded,
-                          color: lowStockCount > 0 ? Colors.orange.shade800 : Colors.grey,
+                        const SizedBox(width: 8),
+
+                        // KPI 2: Low Stock Alerts (Clickable Filter)
+                        Expanded(
+                          child: _buildExecutiveKpiCard(
+                            title: 'Low Stock',
+                            value: '$lowStockCount Alerts',
+                            subtitle: _filterStatus == 'low' ? 'Filtering Active' : 'Tap to Filter',
+                            icon: Icons.warning_amber_rounded,
+                            accentColor: lowStockCount > 0 ? Colors.amber.shade800 : Colors.grey,
+                            isDark: isDark,
+                            isSelected: _filterStatus == 'low',
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              setState(() {
+                                _filterStatus = _filterStatus == 'low' ? 'all' : 'low';
+                              });
+                            },
+                          ),
                         ),
-                        _buildSummaryItem(
-                          title: 'Out of Stock',
-                          value: outOfStockCount.toString(),
-                          icon: Icons.remove_shopping_cart_outlined,
-                          color: outOfStockCount > 0 ? Colors.red.shade800 : Colors.grey,
+                        const SizedBox(width: 8),
+
+                        // KPI 3: Today's Stock Movement (In vs Out)
+                        Expanded(
+                          child: _buildExecutiveKpiCard(
+                            title: "Today's Move",
+                            value: '+${todayIn % 1 == 0 ? todayIn.toInt() : todayIn.toStringAsFixed(1)} / -${todayOut % 1 == 0 ? todayOut.toInt() : todayOut.toStringAsFixed(1)}',
+                            subtitle: 'Stock In vs Out',
+                            icon: Icons.swap_vert_rounded,
+                            accentColor: Colors.blue.shade700,
+                            isDark: isDark,
+                          ),
                         ),
                       ],
                     ),
-                    const Divider(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Stock Buy Valuation', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                            Text(_currency.format(totalValuation), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                          ],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            const Text('Retail Potential Value', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                            Text(
-                              _currency.format(totalRetailValuation),
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+                  ),
 
-              // 2. Search & Filter Bar
+              // 2. Command & Scan Bar
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Column(
                   children: [
-                    TextField(
-                      controller: _searchCtrl,
-                      onChanged: (val) => setState(() => _searchQuery = val.trim()),
-                      decoration: InputDecoration(
-                        hintText: 'Search product, SKU or category...',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
-                                onPressed: () {
-                                  _searchCtrl.clear();
-                                  setState(() => _searchQuery = '');
-                                },
-                              )
-                            : null,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        isDense: true,
+                    Container(
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.grey.shade800 : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _searchCtrl,
+                        onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                        decoration: InputDecoration(
+                          hintText: 'Search name, SKU, category, or brand...',
+                          hintStyle: const TextStyle(fontSize: 13, color: Colors.grey),
+                          prefixIcon: const Icon(Icons.manage_search_rounded, color: AppColors.primary),
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (_searchQuery.isNotEmpty)
+                                IconButton(
+                                  icon: const Icon(Icons.clear, size: 18),
+                                  onPressed: () {
+                                    _searchCtrl.clear();
+                                    setState(() => _searchQuery = '');
+                                  },
+                                ),
+                              IconButton(
+                                icon: const Icon(Icons.qr_code_scanner, color: AppColors.primary),
+                                tooltip: 'Scan Barcode / SKU',
+                                onPressed: _openBarcodeScannerSheet,
+                              ),
+                            ],
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          border: InputBorder.none,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
@@ -512,6 +685,37 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                                   ),
                                               ],
                                             ),
+                                            if (product.trackExpiry && product.expiryDate != null) ...[
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.event,
+                                                    size: 12,
+                                                    color: product.isExpired
+                                                        ? Colors.red.shade800
+                                                        : (product.isExpiringSoon ? Colors.amber.shade900 : Colors.grey),
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    product.isExpired
+                                                        ? 'EXPIRED (${DateFormat("d MMM yyyy").format(product.expiryDate!)})'
+                                                        : (product.isExpiringSoon
+                                                            ? 'Expiring in ${product.daysUntilExpiry} days (${DateFormat("d MMM").format(product.expiryDate!)})'
+                                                            : 'Exp: ${DateFormat("d MMM yyyy").format(product.expiryDate!)}'),
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight: product.isExpiringSoon || product.isExpired
+                                                          ? FontWeight.bold
+                                                          : FontWeight.normal,
+                                                      color: product.isExpired
+                                                          ? Colors.red.shade800
+                                                          : (product.isExpiringSoon ? Colors.amber.shade900 : Colors.grey),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
                                           ],
                                         ),
                                       ),
@@ -626,12 +830,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         ),
                       );
                     },
-                    ),
+                  ),
               ),
             ],
           );
         },
-      ),
+      );
+    },
+  ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primary,
         onPressed: () => Navigator.push(
@@ -644,27 +850,83 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
-  Widget _buildSummaryItem({
+  Widget _buildExecutiveKpiCard({
     required String title,
     required String value,
+    required String subtitle,
     required IconData icon,
-    required Color color,
+    required Color accentColor,
+    required bool isDark,
+    bool isSelected = false,
+    VoidCallback? onTap,
   }) {
-    return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? accentColor.withValues(alpha: 0.15)
+                : (isDark ? Colors.grey.shade800 : Colors.white),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? accentColor : (isDark ? Colors.grey.shade700 : Colors.grey.shade200),
+              width: isSelected ? 2 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 6,
+                spreadRadius: 1,
+              ),
+            ],
           ),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 11, color: Colors.grey),
-            textAlign: TextAlign.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  Icon(icon, color: accentColor, size: 16),
+                ],
+              ),
+              const SizedBox(height: 6),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected ? accentColor : null,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 9,
+                  color: isSelected ? accentColor : Colors.grey,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
