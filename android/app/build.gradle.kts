@@ -1,6 +1,4 @@
 import java.util.Properties
-import com.android.build.api.dsl.ApplicationExtension
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
@@ -22,7 +20,7 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(keystorePropertiesFile.inputStream())
 }
 
-configure<ApplicationExtension> {
+android {
     namespace = "com.MKDevOps.moneyManage"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -43,10 +41,7 @@ configure<ApplicationExtension> {
     }
 
     defaultConfig {
-        // Unique Application ID to avoid conflicts on the device
         applicationId = "com.MKDevOps.moneyManage"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = 34
         versionCode = flutter.versionCode
@@ -66,12 +61,6 @@ configure<ApplicationExtension> {
                 "proguard-rules.pro"
             )
         }
-    }
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_17)
     }
 }
 
