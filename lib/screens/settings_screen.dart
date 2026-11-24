@@ -341,6 +341,90 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showGeminiApiKeyDialog(BuildContext context) {
+    final prefs = Provider.of<UserPrefsProvider>(context, listen: false);
+    final keyCtrl = TextEditingController(text: prefs.geminiApiKey);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.auto_awesome, color: AppColors.primary),
+            SizedBox(width: 8),
+            Text('Gemini AI API Key'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Enter your Gemini API key to enable AI bill & invoice line extraction (gemini-2.5-flash):',
+                style: TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: keyCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Gemini API Key',
+                  hintText: 'AIzaSy...',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.key),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text('How to get a FREE Gemini API Key:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary)),
+              const SizedBox(height: 6),
+              const Text(
+                '1. Go to Google AI Studio website (aistudio.google.com)\n'
+                '2. Sign in with any Google account\n'
+                '3. Click "Create API Key"\n'
+                '4. Copy and paste the key here!',
+                style: TextStyle(fontSize: 12, color: Colors.black87, height: 1.4),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                ),
+                icon: const Icon(Icons.open_in_new, size: 16),
+                label: const Text('Open Google AI Studio (Get Key)'),
+                onPressed: () async {
+                  final uri = Uri.parse('https://aistudio.google.com/app/apikey');
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+            onPressed: () async {
+              await prefs.setGeminiApiKey(keyCtrl.text.trim());
+              if (context.mounted) {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Gemini API Key saved successfully!')),
+                );
+              }
+            },
+            child: const Text('Save Key'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
@@ -435,6 +519,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text('Smart Calculator'),
             subtitle: const Text('Quick math calculations for expenses'),
             onTap: () => CalculatorSheet.show(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.auto_awesome, color: AppColors.primary),
+            title: const Text('Gemini AI API Key'),
+            subtitle: Text(
+              Provider.of<UserPrefsProvider>(context).geminiApiKey.isNotEmpty
+                  ? 'Key Configured (Ready for AI Bill Parsing)'
+                  : 'Tap to configure key & guide',
+            ),
+            onTap: () => _showGeminiApiKeyDialog(context),
           ),
           ListTile(
             leading: const Icon(Icons.language),

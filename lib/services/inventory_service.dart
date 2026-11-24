@@ -37,6 +37,8 @@ class InventoryService {
       unit: p.unit,
       minStock: p.minStock,
       updatedAt: DateTime.now(),
+      trackExpiry: p.trackExpiry,
+      expiryDate: p.expiryDate,
     );
 
     final batch = _db.batch();
@@ -61,6 +63,44 @@ class InventoryService {
     return id;
   }
 
+  Future<void> bulkAddProducts(List<ProductStock> productsList) async {
+    final batch = _db.batch();
+    for (final p in productsList) {
+      final id = p.id.isNotEmpty ? p.id : _uuid.v4();
+      final newProduct = ProductStock(
+        id: id,
+        name: p.name,
+        sku: p.sku,
+        category: p.category,
+        buyPrice: p.buyPrice,
+        sellPrice: p.sellPrice,
+        quantity: p.quantity,
+        unit: p.unit,
+        minStock: p.minStock,
+        updatedAt: DateTime.now(),
+        trackExpiry: p.trackExpiry,
+        expiryDate: p.expiryDate,
+      );
+
+      batch.set(_products.doc(id), newProduct.toMap());
+
+      if (p.quantity > 0) {
+        final logId = _uuid.v4();
+        final log = StockLog(
+          id: logId,
+          productId: id,
+          productName: p.name,
+          type: StockLogType.stockIn,
+          quantity: p.quantity,
+          note: 'Bulk Import Initial Stock',
+          date: DateTime.now(),
+        );
+        batch.set(_stockLogs.doc(logId), log.toMap());
+      }
+    }
+    await batch.commit();
+  }
+
   Future<void> updateProduct(ProductStock p) async {
     await _products.doc(p.id).update({
       'name': p.name,
@@ -71,6 +111,8 @@ class InventoryService {
       'unit': p.unit,
       'minStock': p.minStock,
       'updatedAt': Timestamp.fromDate(DateTime.now()),
+      'trackExpiry': p.trackExpiry,
+      'expiryDate': p.expiryDate != null ? Timestamp.fromDate(p.expiryDate!) : null,
     });
   }
 

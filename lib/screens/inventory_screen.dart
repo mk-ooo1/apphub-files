@@ -5,6 +5,7 @@ import '../models/product_stock.dart';
 import '../services/inventory_service.dart';
 import '../utils/theme.dart';
 import 'add_product_screen.dart';
+import 'bulk_import_screen.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -323,6 +324,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
         title: const Text('Inventory & Stock'),
         backgroundColor: AppColors.primary,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.file_upload_outlined),
+            tooltip: 'Bulk Import Products',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BulkImportScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'Add Product',
