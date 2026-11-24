@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -76,6 +77,45 @@ class _BulkImportScreenState extends State<BulkImportScreen> with SingleTickerPr
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to share template: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickAndReadCsvFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv', 'txt'],
+        withData: true,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        String content = '';
+
+        if (file.bytes != null) {
+          content = utf8.decode(file.bytes!);
+        } else if (file.path != null) {
+          content = await File(file.path!).readAsString();
+        }
+
+        if (content.isNotEmpty) {
+          setState(() {
+            _csvTextCtrl.text = content;
+          });
+          _parseCsvText();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Loaded "${file.name}" successfully!')),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking file: $e')),
         );
       }
     }
@@ -382,14 +422,31 @@ Bill Text:
                 style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
               const SizedBox(height: 12),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(color: AppColors.primary),
-                ),
-                icon: const Icon(Icons.download),
-                label: const Text('Download Sample CSV Template'),
-                onPressed: _shareCsvTemplate,
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
+                      ),
+                      icon: const Icon(Icons.download, size: 18),
+                      label: const Text('Sample Template'),
+                      onPressed: _shareCsvTemplate,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                      ),
+                      icon: const Icon(Icons.upload_file, size: 18),
+                      label: const Text('Upload CSV File'),
+                      onPressed: _pickAndReadCsvFile,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

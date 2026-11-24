@@ -64,40 +64,117 @@ class InventoryService {
   }
 
   Future<void> bulkAddProducts(List<ProductStock> productsList) async {
+    // 1. Fetch existing products for SKU / Barcode / Name matching
+    final existingDocs = await _products.get();
+    final existingMapBySku = <String, ProductStock>{};
+    final existingMapByName = <String, ProductStock>{};
+
+    for (final doc in existingDocs.docs) {
+      final item = ProductStock.fromMap(doc.id, doc.data());
+      if (item.sku != null && item.sku!.trim().isNotEmpty) {
+        existingMapBySku[item.sku!.trim().toLowerCase()] = item;
+      }
+      existingMapByName[item.name.trim().toLowerCase()] = item;
+    }
+
     final batch = _db.batch();
+
     for (final p in productsList) {
-      final id = p.id.isNotEmpty ? p.id : _uuid.v4();
-      final newProduct = ProductStock(
-        id: id,
-        name: p.name,
-        sku: p.sku,
-        category: p.category,
-        buyPrice: p.buyPrice,
-        sellPrice: p.sellPrice,
-        quantity: p.quantity,
-        unit: p.unit,
-        minStock: p.minStock,
-        updatedAt: DateTime.now(),
-        trackExpiry: p.trackExpiry,
-        expiryDate: p.expiryDate,
-      );
+      final skuKey = p.sku?.trim().toLowerCase();
+      final nameKey = p.name.trim().toLowerCase();
 
-      batch.set(_products.doc(id), newProduct.toMap());
+      // Check if item exists by SKU or Name
+      ProductStock? existingItem;
+      if (skuKey != null && skuKey.isNotEmpty && existingMapBySku.containsKey(skuKey)) {
+        existingItem = existingMapBySku[skuKey];
+      } else if (existingMapByName.containsKey(nameKey)) {
+        existingItem = existingMapByName[nameKey];
+      }
 
-      if (p.quantity > 0) {
-        final logId = _uuid.v4();
-        final log = StockLog(
-          id: logId,
-          productId: id,
-          productName: p.name,
-          type: StockLogType.stockIn,
-          quantity: p.quantity,
-          note: 'Bulk Import Initial Stock',
-          date: DateTime.now(),
+      if (existingItem != null) {
+        // MATCH FOUND: Increment stock quantity instead of creating duplicate card
+        final updatedQty = existingItem.quantity + p.quantity;
+        batch.update(_products.doc(existingItem.id), {
+          'quantity': updatedQty,
+          'updatedAt': Timestamp.fromDate(DateTime.now()),
+        });
+
+        // Add Stock In log
+        if (p.quantity > 0) {
+          final logId = _uuid.v4();
+          final log = StockLog(
+            id: logId,
+            productId: existingItem.id,
+            productName: existingItem.name,
+            type: StockLogType.stockIn,
+            quantity: p.quantity,
+            note: 'Bulk Import Stock Addition (Duplicate Match)',
+            date: DateTime.now(),
+          );
+          batch.set(_stockLogs.doc(logId), log.toMap());
+        }
+
+        // Update local map cache for intra-batch duplicate protection
+        final updatedItem = ProductStock(
+          id: existingItem.id,
+          name: existingItem.name,
+          sku: existingItem.sku,
+          category: existingItem.category,
+          buyPrice: existingItem.buyPrice,
+          sellPrice: existingItem.sellPrice,
+          quantity: updatedQty,
+          unit: existingItem.unit,
+          minStock: existingItem.minStock,
+          updatedAt: DateTime.now(),
+          trackExpiry: existingItem.trackExpiry,
+          expiryDate: existingItem.expiryDate,
         );
-        batch.set(_stockLogs.doc(logId), log.toMap());
+        if (skuKey != null && skuKey.isNotEmpty) {
+          existingMapBySku[skuKey] = updatedItem;
+        }
+        existingMapByName[nameKey] = updatedItem;
+      } else {
+        // NO MATCH: Create new product card as usual
+        final id = p.id.isNotEmpty ? p.id : _uuid.v4();
+        final newProduct = ProductStock(
+          id: id,
+          name: p.name,
+          sku: p.sku,
+          category: p.category,
+          buyPrice: p.buyPrice,
+          sellPrice: p.sellPrice,
+          quantity: p.quantity,
+          unit: p.unit,
+          minStock: p.minStock,
+          updatedAt: DateTime.now(),
+          trackExpiry: p.trackExpiry,
+          expiryDate: p.expiryDate,
+        );
+
+        batch.set(_products.doc(id), newProduct.toMap());
+
+        if (p.quantity > 0) {
+          final logId = _uuid.v4();
+          final log = StockLog(
+            id: logId,
+            productId: id,
+            productName: p.name,
+            type: StockLogType.stockIn,
+            quantity: p.quantity,
+            note: 'Bulk Import Initial Stock',
+            date: DateTime.now(),
+          );
+          batch.set(_stockLogs.doc(logId), log.toMap());
+        }
+
+        // Cache new item
+        if (skuKey != null && skuKey.isNotEmpty) {
+          existingMapBySku[skuKey] = newProduct;
+        }
+        existingMapByName[nameKey] = newProduct;
       }
     }
+
     await batch.commit();
   }
 
